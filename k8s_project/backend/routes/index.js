@@ -1,5 +1,7 @@
-// 1) 모듈/함수 한 번만 불러오기
 const express = require('express');
+const router = express.Router();
+
+// messages.js 가 같은 폴더(routes)에 있으므로 ./messages
 const {
   saveReview,
   getReviews,
@@ -8,44 +10,38 @@ const {
   deleteReview
 } = require('./messages');
 
-const router = express.Router();
-
-// --- '한입로그' 리뷰 API 엔드포인트 ---
-
 /**
  * GET /api/reviews?category=<카테고리명>
- * 목록(카테고리 필터 포함)
+ * 전체/카테고리별 리뷰 조회 (최신순)
  */
 router.get('/api/reviews', async (req, res) => {
-  const { category } = req.query;
-  console.log(`received request: GET /api/reviews, category: ${category || 'All'}`);
   try {
-    const reviews = await getReviews(category);
+    const { category } = req.query;              // ex) /api/reviews?category=한식
+    const reviews = await getReviews(category);  // '전체' 또는 undefined면 전체 조회
     res.status(200).json(reviews);
-  } catch (err) {
-    console.error('Error in GET /api/reviews:', err);
+  } catch (e) {
+    console.error('GET /api/reviews error:', e);
     res.status(500).json({ error: 'Failed to fetch reviews' });
   }
 });
 
 /**
  * POST /api/reviews
- * 새 리뷰 생성
+ * 리뷰 생성
  */
 router.post('/api/reviews', async (req, res) => {
-  console.log('received request: POST /api/reviews, body:', req.body);
   try {
-    const newReview = await saveReview(req.body);
-    res.status(201).json(newReview);
-  } catch (err) {
-    console.error('Error saving submit data:', err);
-    res.status(500).json({ error: 'Server error while saving data' });
+    const newDoc = await saveReview(req.body);
+    res.status(201).json(newDoc);
+  } catch (e) {
+    console.error('POST /api/reviews error:', e);
+    res.status(500).json({ error: 'Failed to save review' });
   }
 });
 
 /**
  * GET /api/reviews/:id
- * 단건 조회(수정 폼 채우기용)
+ * 단건 조회
  */
 router.get('/api/reviews/:id', async (req, res) => {
   try {
@@ -53,13 +49,14 @@ router.get('/api/reviews/:id', async (req, res) => {
     if (!doc) return res.status(404).json({ error: 'Not found' });
     res.json(doc);
   } catch (e) {
+    console.error('GET /api/reviews/:id error:', e);
     res.status(500).json({ error: 'Failed to fetch review' });
   }
 });
 
 /**
  * PUT /api/reviews/:id
- * 수정 저장
+ * 리뷰 수정
  */
 router.put('/api/reviews/:id', async (req, res) => {
   try {
@@ -67,13 +64,14 @@ router.put('/api/reviews/:id', async (req, res) => {
     if (!updated) return res.status(404).json({ error: 'Not found' });
     res.json(updated);
   } catch (e) {
+    console.error('PUT /api/reviews/:id error:', e);
     res.status(500).json({ error: 'Failed to update review' });
   }
 });
 
 /**
  * DELETE /api/reviews/:id
- * 삭제
+ * 리뷰 삭제
  */
 router.delete('/api/reviews/:id', async (req, res) => {
   try {
@@ -81,6 +79,7 @@ router.delete('/api/reviews/:id', async (req, res) => {
     if (!deleted) return res.status(404).json({ error: 'Not found' });
     res.json({ ok: true });
   } catch (e) {
+    console.error('DELETE /api/reviews/:id error:', e);
     res.status(500).json({ error: 'Failed to delete review' });
   }
 });
