@@ -1,0 +1,83 @@
+doctype html
+html
+  head
+    meta(charset='utf-8')
+    title 한입로그
+    meta(name='viewport', content='width=device-width, initial-scale=1')
+    link(rel='stylesheet', href='https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css', integrity='sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T', crossorigin='anonymous')
+    link(rel='stylesheet', href='css/style.css')
+    link(rel='stylesheet', href='https://fonts.googleapis.com/css?family=Consolas')
+  body
+    .header.bg-light.mb-0
+      .container
+        h1
+          a(href='/', class='text-dark text-decoration-none') 한입로그🍽
+        p.text-muted.mb-0 작은 한입에도 이야기가 담겨요 🍲
+        p.text-muted.mb-1 추첨을 통해 상품을 드립니다🎉🎊
+
+    .container.mb-5
+      h3.mb-4.text-primary 글 작성하기
+      a.btn.btn-outline-primary(href='/reviews/new', target='_blank', rel='noopener') 새 창으로 리뷰쓰기
+
+      form(action='/submit' method='POST')
+        .form-group
+          label(for='name') 이름
+          input#name.form-control(type='text' name='name' placeholder='익명도 가능해요')
+
+        .form-group
+          label(for='store') 가게명
+          input#store.form-control(type='text' name='store' placeholder='방문한 음식점 이름을 적어주세요')
+
+        .form-group
+          label(for='category') 음식 분류
+          select#category.form-control(name='category')
+            option(value='한식') 한식
+            option(value='중식') 중식
+            option(value='일식') 일식
+            option(value='양식') 양식
+            option(value='분식') 분식
+            option(value='기타') 기타
+
+        .form-group
+          label(for='menu') 먹은 음식
+          input#menu.form-control(type='text' name='menu' placeholder='예: 김치찌개, 크림파스타 등')
+
+        .form-group
+          label(for='taste') 맛 평점
+          select#taste.form-control(name='taste')
+            option(value='5') ★★★★★
+            option(value='4') ★★★★☆
+            option(value='3') ★★★☆☆
+            option(value='2') ★★☆☆☆
+            option(value='1') ★☆☆☆☆
+
+        .form-group
+          label(for='mood') 분위기
+          input#mood.form-control(type='text' name='mood' placeholder='조용함, 활기참, 가족적, 트렌디 등')
+
+        .form-group
+          label(for='memo') 추가 메모
+          textarea#memo.form-control(name='memo' rows='4' placeholder='위생 상태, 위치, 걸리는 시간 등을 적어주세요')
+
+        .form-group
+          label(for='recommend') 추천 여부
+          select#recommend.form-control(name='recommend')
+            option(value='yes') 추천해요 👍
+            option(value='no') 아쉬워요 👎
+
+        button.btn.btn-success.btn-block(type='submit') 작성 완료
+
+    .container-fluid.posts.mt-5
+      //- ⭐ [수정됨] 카테고리 필터 버튼 추가
+      .mb-4.text-center
+        - const categories = ['전체', '한식', '중식', '일식', '양식', '분식', '기타']
+        each cat in categories
+          //- currentCategory 변수를 사용하여 현재 선택된 카테고리에 다른 스타일 적용
+          a(href=`/?category=${cat}`, class=`btn ${currentCategory === cat ? 'btn-primary' : 'btn-outline-secondary'} mr-2 mb-2`)= cat
+
+      //- 기존 list.pug 포함
+      include list.pug
+
+    script(src='https://code.jquery.com/jquery-3.3.1.slim.min.js')
+    script(src='https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js')
+

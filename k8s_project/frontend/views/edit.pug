@@ -1,0 +1,38 @@
+doctype html
+html
+  head
+    meta(charset="utf-8")
+    title 리뷰 수정하기
+    link(rel="stylesheet", href="/css/style.css")
+  body
+    h2 📝 리뷰 수정하기
+    form(method="POST", action=`/reviews/${review._id}`)
+      label(for="name") 작성자
+      input(type="text", name="name", value=review.name, required)
+
+      label(for="store") 가게명
+      input(type="text", name="store", value=review.store, required)
+
+      label(for="category") 카테고리
+      input(type="text", name="category", value=review.category)
+
+      label(for="menu") 메뉴
+      input(type="text", name="menu", value=review.menu)
+
+      label(for="taste") 맛 평가
+      input(type="text", name="taste", value=review.taste)
+
+      label(for="mood") 분위기
+      input(type="text", name="mood", value=review.mood)
+
+      label(for="memo") 메모
+      textarea(name="memo")= review.memo
+
+      label(for="recommend") 추천 여부
+      select(name="recommend")
+        option(value="예", selected=(review.recommend === '예')) 예
+        option(value="아니오", selected=(review.recommend === '아니오')) 아니오
+
+      br
+      button(type="submit") 수정 완료
+      button(type="button", onclick="window.close()") 닫기

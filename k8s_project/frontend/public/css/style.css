@@ -1,0 +1,174 @@
+body {
+    font-family: 'Roboto', sans-serif;
+    background: #f8f9fa;
+}
+
+/* --- Container 기본 스타일 --- */
+/* (기존 max-width 제한은 아래 @media 규칙 제거로 해제됨) */
+.container {
+    margin-top: 50px;
+    background: white;
+    border-radius: 10px;
+    z-index: 10;
+    position: relative;
+    padding: 50px 16px; /* 기본 패딩 유지 */
+}
+
+/* --- 헤더 안의 Container 스타일 --- */
+/* (헤더 부분 배경 제거) */
+.header .container {
+    background: none;
+    /* 헤더 컨테이너는 여전히 max-width 제한을 받을 수 있음 */
+    /* 필요하다면 이 부분도 조정 */
+    max-width: 1140px; /* Bootstrap 기본 container 너비 예시 */
+    margin-left: auto;
+    margin-right: auto;
+}
+
+
+/* --- 헤더 스타일 --- */
+.header {
+    margin: 0;
+    position: relative;
+    padding-top: 1rem; /* 헤더 상하 여백 추가 예시 */
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #dee2e6; /* 헤더 구분선 */
+}
+
+/* --- H1 (로고/타이틀) 스타일 --- */
+h1 {
+    margin-bottom: 2rem;
+    /* max-width: 1140px; */ /* 부모 container가 너비를 제어하므로 제거 가능 */
+    /* margin: auto; */
+    padding-bottom: 16px;
+    position: relative;
+    text-align: center; /* 타이틀 중앙 정렬 예시 */
+}
+
+h1 a {
+    color: #202124;
+    font-size: 60px; /* 기본 H1 크기 유지 */
+    font-weight: bold; /* 굵게 처리 예시 */
+}
+
+/* 작은 화면 H1 크기 조정 */
+@media (max-width: 480px) {
+    h1 a {
+        font-size: 40px;
+    }
+}
+
+/* --- 카드(Card) 기본 스타일 --- */
+.card {
+    border: none; /* 테두리 없음 */
+    box-shadow: 0px 3px 1px -2px rgba(0, 0, 0, 0.2), 0px 2px 2px 0px rgba(0, 0, 0, 0.14), 0px 1px 5px 0px rgba(0, 0, 0, 0.12); /* 그림자 효과 */
+    /* display: inline-block; */ /* 이 줄 제거 -> 카드가 블록 요소처럼 동작하게 함 */
+    width: 100%; /* 너비 100% 명시 (col-12와 함께 사용 시 불필요할 수 있음) */
+}
+
+.card-body {
+    margin: 10px; /* 기존 마진 유지 */
+}
+
+/* --- 리뷰 목록(.posts) 관련 스타일 --- */
+/* (기존 .posts:after 스타일은 유지) */
+.posts:after {
+    background: linear-gradient(to right, #4285f4 25%,#db4437 25%, #db4437 50%, #f4b400 50%, #f4b400 75%, #0f9d58 75%);
+    position: absolute;
+    content: '';
+    height: 4px;
+    right: 0;
+    left: 0;
+    top: 0;
+}
+
+/* --- 카드 내부 타이포그래피 (H5, H6, P) --- */
+/* (기존 float 속성 제거하고 Flexbox 사용 권장 - list.pug 수정 필요) */
+h5 {
+    font-size: 1.5rem; /* Bootstrap 기본 h5 크기 */
+    /* float: left; */ /* 제거 */
+}
+
+h6 {
+    font-size: 1rem; /* Bootstrap 기본 h6 크기 */
+    color: #6c757d; /* Bootstrap text-muted 색상 */
+    /* float: right; */ /* 제거 */
+}
+
+p {
+    font-size: 1rem; /* Bootstrap 기본 p 크기 */
+    color: #646464;
+    /* margin-top 제거하고 Bootstrap spacing 클래스(mb-*, mt-*) 사용 권장 */
+    /* margin-top: 1rem !important; */
+}
+
+
+/* --- 기타 기존 스타일 (불필요해 보이는 것 주석 처리) --- */
+/* .next-logo {
+    position: absolute;
+    right: 0;
+    top: 0;
+    opacity: 0.5;
+    z-index: -1;
+    width: 30%
+} */
+
+a:hover {
+    text-decoration: none;
+}
+
+/* .form-inline {
+    margin-bottom: 40px;
+} */
+
+/* .github {
+    max-width: 80px;
+    opacity: 0.5;
+}
+
+.github:hover {
+    opacity: 1;
+} */
+
+
+/* ==========================
+   리뷰 카드 상세 스타일 추가 (새로 추가된 부분)
+   ========================== */
+
+/* 카드 바디 안의 일반 텍스트 */
+.card-body p.card-text {
+  font-size: 0.95rem; /* 기본 텍스트 크기 약간 키우기 */
+  line-height: 1.5;   /* 줄 간격 확보 */
+  margin-bottom: 0.75rem; /* 문단 간 간격 조정 */
+}
+
+/* 카드 하단 메모 텍스트 */
+.review-memo {
+  font-size: 0.9em;  /* 메모 폰트 크기 조정 */
+  line-height: 1.4; /* 메모 줄 간격 조정 */
+  flex-grow: 1;     /* 남는 공간 차지 (날짜와 간격 확보) */
+  margin-right: 1rem; /* 날짜와의 최소 간격 */
+  /* 긴 메모 자동 줄바꿈 */
+  white-space: normal;
+  word-wrap: break-word; /* 단어 단위 줄바꿈 */
+  color: #6c757d; /* text-muted 색상 적용 */
+}
+
+/* 카드 하단 날짜 텍스트 */
+.review-date {
+  font-size: 0.85em; /* 날짜 폰트 크기 약간 작게 */
+  white-space: nowrap; /* 날짜는 줄바꿈되지 않도록 */
+  color: #6c757d; /* text-muted 색상 적용 */
+}
+
+/* 추천 여부 뱃지 스타일 */
+.card-body .badge {
+  font-size: 0.8em;
+  padding: 0.4em 0.6em;
+  vertical-align: middle; /* 텍스트 옆에 자연스럽게 배치 */
+}
+
+/* 별점 크기 조정 */
+.card-body .h5.text-warning {
+    font-size: 1.1rem; /* 별표 크기 미세 조정 */
+}
