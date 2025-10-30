@@ -1,51 +1,55 @@
-const express = require('express')
+const express = require('express');
 const mongoose = require('mongoose');
-const app = express()
-//const routes = require('./routes')
-const routeModule = require('./routes')
-const PORT = process.env.PORT
-const messages = require('./routes/messages')
-const cors = require('cors') // CORS 처리를 위해 추가
-
-app.use(cors()) // CORS 설정
-// ⭐ 폼 데이터를 올바르게 파싱하기 위해 bodyParser 미들웨어 추가 (Express 4.16+ 내장)
-app.use(express.json());
-app.use(express.urlencoded({ extended: true })); // <-- 이 라인이 폼 데이터를 처리합니다.
-
-// ⭐ 1. HAProxy 헬스 체크 경로 정의 (가장 먼저 라우팅 되어야 합니다!)
-app.get('/health', (req, res) => {
-    // 200 OK 응답으로 "실행 중"임을 알립니다.
-    if (mongoose.connection.readyState === 1) {
-    // 1(connected) 상태일 때만 200 OK 응답
-    res.status(200).send({ "status": "ok", "db": "ok" });
-  } else {
-    // 그 외 모든 경우 (연결 중, 끊김 등) 503 Service Unavailable 응답
-    res.status(503).send({ "status": "error", "db": "unavailable" });
-  }
-});
-
-app.use('/', routeModule)
+const app = express();
+const routeModule = require('./routes');
+const cors = require('cors'); // CORS 처리를 위해 추가
 
 // Application will fail if environment variables are not set
-if(!process.env.PORT) {
-  const errMsg = "PORT environment variable is not defined"
-  console.error(errMsg)
-  throw new Error(errMsg)
+if (!process.env.PORT) {
+    const errMsg = "PORT environment variable is not defined";
+    console.error(errMsg);
+    throw new Error(errMsg);
 }
 
-if(!process.env.GUESTBOOK_DB_ADDR) {
-  const errMsg = "GUESTBOOK_DB_ADDR environment variable is not defined"
-  console.error(errMsg)
-  throw new Error(errMsg)
+if (!process.env.MONGO_URI) {
+    const errMsg = "MONGO_URI environment variable is not defined";
+    console.error(errMsg);
+    throw new Error(errMsg);
 }
 
-// Connect to MongoDB, will retry only once
-messages.connectToMongoDB()
+const PORT = process.env.PORT;
+const MONGO_URI = process.env.MONGO_URI;
 
-// Starts an http server on the $PORT environment variable
-app.listen(PORT, () => {
-  console.log(`App listening on port ${PORT}`);
-  console.log('Press Ctrl+C to quit.');
+// --- 데이터베이스 연결 ---
+const connectToMongoDB = () => {
+    console.log('Attempting MongoDB connection...');
+    mongoose.connect(MONGO_URI)
+        .then(() => console.log(`✅ Successfully connected to MongoDB`))
+        .catch(err => {
+            console.error(`Initial MongoDB connection failed: ${err.message}. Retrying in 5 seconds...`);
+            setTimeout(connectToMongoDB, 5000);
+        });
+};
+
+connectToMongoDB(); // DB 연결 시작
+
+app.use(cors()); // CORS 설정
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+app.get('/health', (req, res) => {
+    if (mongoose.connection.readyState === 1) {
+        res.status(200).send({ "status": "ok", "db": "ok" });
+    } else {
+        res.status(503).send({ "status": "error", "db": "unavailable" });
+    }
 });
 
-module.exports = app
+app.use('/', routeModule);
+
+app.listen(PORT, () => {
+    console.log(`App listening on port ${PORT}`);
+    console.log('Press Ctrl+C to quit.');
+});
+
+module.exports = app;
