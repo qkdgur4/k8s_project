@@ -17,7 +17,13 @@ html
 
     .container.mb-5
       h3.mb-4.text-primary 글 작성하기
-      a.btn.btn-outline-primary(href='/reviews/new', target='_blank', rel='noopener') 새 창으로 리뷰쓰기
+      
+      // ✅ 새 창으로 리뷰쓰기 버튼
+      a.btn.btn-outline-primary.mb-3(
+        href='/reviews/new',
+        target='_blank',
+        rel='noopener'
+      ) 새 창으로 리뷰쓰기
 
       form(action='/submit' method='POST')
         .form-group
@@ -72,12 +78,13 @@ html
       .mb-4.text-center
         - const categories = ['전체', '한식', '중식', '일식', '양식', '분식', '기타']
         each cat in categories
-          //- currentCategory 변수를 사용하여 현재 선택된 카테고리에 다른 스타일 적용
-          a(href=`/?category=${cat}`, class=`btn ${currentCategory === cat ? 'btn-primary' : 'btn-outline-secondary'} mr-2 mb-2`)= cat
+          a(
+            href=`/?category=${cat}`,
+            class=`btn ${currentCategory === cat ? 'btn-primary' : 'btn-outline-secondary'} mr-2 mb-2`
+          )= cat
 
       //- 기존 list.pug 포함
       include list.pug
 
     script(src='https://code.jquery.com/jquery-3.3.1.slim.min.js')
     script(src='https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js')
-
