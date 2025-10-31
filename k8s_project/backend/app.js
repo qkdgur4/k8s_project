@@ -1,55 +1,44 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const cors = require('cors');
 const app = express();
 const routeModule = require('./routes');
-const cors = require('cors'); // CORS 처리를 위해 추가
 
-// Application will fail if environment variables are not set
+// 환경 변수 확인
 if (!process.env.PORT) {
-    const errMsg = "PORT environment variable is not defined";
-    console.error(errMsg);
-    throw new Error(errMsg);
+    throw new Error("PORT environment variable is not defined");
 }
-
-if (!process.env.MONGO_URI) {
-    const errMsg = "MONGO_URI environment variable is not defined";
-    console.error(errMsg);
-    throw new Error(errMsg);
+if (!process.env.GUESTBOOK_DB_ADDR) {
+    throw new Error("GUESTBOOK_DB_ADDR environment variable is not defined");
 }
 
 const PORT = process.env.PORT;
-const MONGO_URI = process.env.MONGO_URI;
+const MONGO_URI = process.env.GUESTBOOK_DB_ADDR;
 
-// --- 데이터베이스 연결 ---
+// DB 연결 함수
 const connectToMongoDB = () => {
     console.log('Attempting MongoDB connection...');
     mongoose.connect(MONGO_URI)
         .then(() => console.log(`✅ Successfully connected to MongoDB`))
         .catch(err => {
-            console.error(`Initial MongoDB connection failed: ${err.message}. Retrying in 5 seconds...`);
+            console.error(`MongoDB connection failed: ${err.message}. Retrying in 5 seconds...`);
             setTimeout(connectToMongoDB, 5000);
         });
 };
 
 connectToMongoDB(); // DB 연결 시작
 
-app.use(cors()); // CORS 설정
+// 미들웨어 설정
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.get('/health', (req, res) => {
-    if (mongoose.connection.readyState === 1) {
-        res.status(200).send({ "status": "ok", "db": "ok" });
-    } else {
-        res.status(503).send({ "status": "error", "db": "unavailable" });
-    }
-});
+// 라우트 설정
+app.use('/api', routeModule); // 🟢 모든 API 경로에 /api 접두사 추가
 
-app.use('/', routeModule);
-
+// 서버 시작
 app.listen(PORT, () => {
     console.log(`App listening on port ${PORT}`);
-    console.log('Press Ctrl+C to quit.');
 });
 
 module.exports = app;

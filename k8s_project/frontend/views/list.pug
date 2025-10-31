@@ -1,4 +1,3 @@
-
 if reviews && reviews.length > 0
     h3.my-4.text-primary 작성된 글 목록
     .row
@@ -32,10 +31,21 @@ if reviews && reviews.length > 0
 
                         //- 메모와 날짜 부분
                         .d-flex.justify-content-between.align-items-end.border-top.pt-3.mt-3
-                            //- ⭐ 메모 부분에 review-memo 클래스 추가
                             small.text-muted.review-memo #{review.memo || '메모 없음'}
-                            //- ⭐ 날짜 부분에 review-date 클래스 추가 및 float-right 제거
                             small.text-muted.review-date #{new Date(review.createdAt).toLocaleDateString()}
+
+                        // ✅ ✏ 수정 / 삭제 버튼 묶음
+                        .text-right.mt-2
+                            a.btn.btn-sm.btn-outline-secondary(
+                                href=`/reviews/${review._id}/edit`,
+                                target='_blank',
+                                rel='noopener'
+                            ) ✏ 수정하기
+                            // 🟥 삭제 버튼 추가 (onclick으로 JS 함수 호출)
+                            button.btn.btn-sm.btn-danger.ml-2(
+                                type='button',
+                                onclick=`deleteReview('${review._id}')`
+                            ) 🗑 삭제
 else
     .alert.alert-info(role='alert')
         | 아직 작성된 리뷰가 없습니다. 첫 번째 리뷰를 남겨주세요!

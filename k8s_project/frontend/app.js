@@ -1,79 +1,35 @@
 const express = require('express');
-const axios = require('axios'); // 백엔드와 통신하기 위한 라이브러리
 const path = require('path');
-
+const axios = require('axios');
 const app = express();
+
 const PORT = process.env.PORT || 8000;
-// GUESTBOOK_API_ADDR 환경변수를 사용하여 백엔드(proxy) 주소를 설정합니다.
 const API_ADDR = process.env.GUESTBOOK_API_ADDR;
 
 // Pug 템플릿 엔진 설정
-app.set('view engine', 'pug');
 app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'pug');
 
-// 정적 파일(css, js) 경로 설정
+// 🟢 public 폴더를 정적 파일 제공 폴더로 설정 (main.js, style.css 등을 위함)
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 폼 데이터 파싱을 위한 미들웨어
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-
-// [수정됨] GET / : 메인 페이지 렌더링
-// 카테고리 쿼리에 따라 백엔드에서 리뷰 목록을 가져와서 home.pug 템플릿에 전달합니다.
+// 🟢 메인 페이지 라우트: 백엔드에서 데이터를 가져와 home.pug를 렌더링
 app.get('/', async (req, res) => {
-    // URL 쿼리 파라미터에서 category 값을 가져오고, 없으면 '전체'를 기본값으로 사용합니다.
-    const selectedCategory = req.query.category || '전체';
-    
     try {
-        if (!API_ADDR) {
-            throw new Error('GUESTBOOK_API_ADDR 환경 변수가 설정되지 않았습니다.');
-        }
-
-        let apiUrl;
-        // 선택된 카테고리가 '전체'가 아닐 경우에만 API URL에 쿼리 파라미터를 추가합니다.
-        if (selectedCategory === '전체') {
-            apiUrl = `http://${API_ADDR}/api/reviews`;
-        } else {
-            apiUrl = `http://${API_ADDR}/api/reviews?category=${encodeURIComponent(selectedCategory)}`;
-        }
-
-        console.log(`Requesting data from: ${apiUrl}`);
-        
-        // 백엔드의 API를 호출합니다.
-        const response = await axios.get(apiUrl);
-        const reviews = response.data;
-
-        // home.pug 템플릿 렌더링 시, 리뷰 데이터와 현재 선택된 카테고리 값을 함께 전달합니다.
-        res.render('home', { reviews: reviews, currentCategory: selectedCategory });
-
-    } catch (error) {
-        console.error('Error fetching reviews from backend:', error.message);
-        // 오류 발생 시, 빈 리뷰 배열과 함께 오류 메시지를 전달하여 페이지에 표시할 수 있습니다.
-        res.render('home', { 
-            reviews: [], 
-            currentCategory: selectedCategory,
-            error: '리뷰를 불러오는 데 실패했습니다.'
+        const category = req.query.category || '전체';
+        // 백엔드 API로 리뷰 목록 요청
+        const response = await axios.get(`${API_ADDR}/api/reviews`, { params: { category } });
+        // 가져온 데이터와 함께 페이지 렌더링
+        res.render('home', {
+            reviews: response.data,
+            currentCategory: category
         });
-    }
-});
-
-// POST /submit : 폼 데이터를 받아서 백엔드로 전달
-app.post('/submit', async (req, res) => {
-    try {
-        if (!API_ADDR) {
-            throw new Error('GUESTBOOK_API_ADDR 환경 변수가 설정되지 않았습니다.');
-        }
-        // home.pug 폼에서 받은 데이터를 백엔드의 POST /api/reviews API로 전달합니다.
-        await axios.post(`http://${API_ADDR}/api/reviews`, req.body);
-        // 성공적으로 전달 후, 메인 페이지로 리다이렉트하여 목록을 갱신합니다.
-        res.redirect('/');
     } catch (error) {
-        console.error('Error submitting review to backend:', error.message);
-        res.status(500).send('리뷰를 제출하는 중 서버 오류가 발생했습니다.');
+        console.error("Error fetching reviews:", error);
+        res.status(500).send("Error fetching reviews from backend");
     }
 });
 
 app.listen(PORT, () => {
     console.log(`Frontend service listening on port ${PORT}`);
 });
-

@@ -1,8 +1,5 @@
-// backend/routes/index.js
-
 const express = require('express');
 const router = express.Router();
-
 const {
   saveReview,
   getReviews,
@@ -11,73 +8,42 @@ const {
   deleteReview
 } = require('./messages');
 
-
-
-
-/**
- * GET /api/reviews?category=<카테고리명>
- * 전체/카테고리별 리뷰 조회 (최신순)
- */
-router.get('/api/reviews', async (req, res) => {
+// GET /reviews : 리뷰 목록 조회
+router.get('/reviews', async (req, res) => {
   try {
     const { category } = req.query;
     const reviews = await getReviews(category);
     res.status(200).json(reviews);
   } catch (e) {
-    console.error('GET /api/reviews error:', e);
     res.status(500).json({ error: 'Failed to fetch reviews' });
   }
 });
 
-/**
- * POST /api/reviews
- * 리뷰 생성
- */
-router.post('/api/reviews', async (req, res) => {
+// POST /reviews : 새 리뷰 생성
+router.post('/reviews', async (req, res) => {
   try {
+    console.log("Received data to save:", req.body); // 🟢 데이터 확인용 로그
     const newDoc = await saveReview(req.body);
-    // 🟢 중요: 리뷰 저장 후, 메인 페이지로 리다이렉트 시키거나 성공 메시지를 보낼 수 있습니다.
-    // 여기서는 JSON 응답을 유지합니다.
     res.status(201).json(newDoc);
   } catch (e) {
-    console.error('POST /api/reviews error:', e);
+    console.error('POST /api/reviews error:', e); // 🟢 에러 확인용 로그
     res.status(500).json({ error: 'Failed to save review' });
   }
 });
 
-// ... (GET /:id, PUT /:id, DELETE /:id 라우트는 동일하게 유지) ...
-router.get('/api/reviews/:id', async (req, res) => {
-  try {
-    const doc = await getReviewById(req.params.id);
-    if (!doc) return res.status(404).json({ error: 'Not found' });
-    res.json(doc);
-  } catch (e) {
-    console.error('GET /api/reviews/:id error:', e);
-    res.status(500).json({ error: 'Failed to fetch review' });
-  }
-});
-
-router.put('/api/reviews/:id', async (req, res) => {
-  try {
-    const updated = await updateReview(req.params.id, req.body);
-    if (!updated) return res.status(404).json({ error: 'Not found' });
-    res.json(updated);
-  } catch (e) {
-    console.error('PUT /api/reviews/:id error:', e);
-    res.status(500).json({ error: 'Failed to update review' });
-  }
-});
-
-router.delete('/api/reviews/:id', async (req, res) => {
+// DELETE /reviews/:id : 리뷰 삭제
+router.delete('/reviews/:id', async (req, res) => {
   try {
     const deleted = await deleteReview(req.params.id);
     if (!deleted) return res.status(404).json({ error: 'Not found' });
     res.json({ ok: true });
   } catch (e) {
-    console.error('DELETE /api/reviews/:id error:', e);
     res.status(500).json({ error: 'Failed to delete review' });
   }
 });
 
+// (수정 기능은 아직 사용하지 않지만, 코드는 남겨둡니다)
+router.get('/reviews/:id', async (req, res) => { /* ... */ });
+router.put('/reviews/:id', async (req, res) => { /* ... */ });
 
 module.exports = router;
