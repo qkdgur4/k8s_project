@@ -4,80 +4,130 @@ html
     meta(charset='utf-8')
     title 한입로그
     meta(name='viewport', content='width=device-width, initial-scale=1')
-    link(rel='stylesheet', href='https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css', integrity='sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T', crossorigin='anonymous')
-    link(rel='stylesheet', href='css/style.css')
-    link(rel='stylesheet', href='https://fonts.googleapis.com/css?family=Consolas')
+    link(rel='stylesheet', href='https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css')
+    link(rel='stylesheet', href='/css/style.css')
+
   body
     .header.bg-light.mb-0
       .container
         h1
           a(href='/', class='text-dark text-decoration-none') 한입로그🍽
         p.text-muted.mb-0 작은 한입에도 이야기가 담겨요 🍲
-        p.text-muted.mb-1 추첨을 통해 상품을 드립니다🎉🎊
 
     .container.mb-5
       h3.mb-4.text-primary 글 작성하기
-      a.btn.btn-outline-primary(href='/reviews/new', target='_blank', rel='noopener') 새 창으로 리뷰쓰기
 
-      form(action='/api/reviews' method='POST')
-        .form-group
-          label(for='name') 이름
-          input#name.form-control(type='text' name='name' placeholder='익명도 가능해요')
+      //- 🟢 1. <a> 태그를 <button> 태그로 변경하고 ID를 부여합니다.
+      button.btn.btn-outline-primary.mb-3#show-form-btn 새 리뷰 작성하기
 
-        .form-group
-          label(for='store') 가게명
-          input#store.form-control(type='text' name='store' placeholder='방문한 음식점 이름을 적어주세요')
+      //- 🟢 2. 리뷰 작성 폼을 여기에 숨겨둡니다. (style="display: none;")
+      #review-form-wrapper(style="display: none;")
+        //- action 주소를 올바른 API 경로로 수정합니다.
+        form#new-review-form(action='/api/reviews' method='POST')
+          .form-group
+            label(for='name') 이름
+            input#name.form-control(type='text' name='name' placeholder='익명도 가능해요')
 
-        .form-group
-          label(for='category') 음식 분류
-          select#category.form-control(name='category')
-            option(value='한식') 한식
-            option(value='중식') 중식
-            option(value='일식') 일식
-            option(value='양식') 양식
-            option(value='분식') 분식
-            option(value='기타') 기타
+          .form-group
+            label(for='store') 가게명
+            input#store.form-control(type='text' name='store' placeholder='방문한 음식점 이름을 적어주세요')
 
-        .form-group
-          label(for='menu') 먹은 음식
-          input#menu.form-control(type='text' name='menu' placeholder='예: 김치찌개, 크림파스타 등')
+          //- (중략) 나머지 폼 필드들은 new-review.pug와 동일합니다.
+          .form-group
+            label(for='category') 음식 분류
+            select#category.form-control(name='category')
+              option(value='한식') 한식
+              option(value='중식') 중식
+              option(value='일식') 일식
+              option(value='양식') 양식
+              option(value='분식') 분식
+              option(value='기타') 기타
 
-        .form-group
-          label(for='taste') 맛 평점
-          select#taste.form-control(name='taste')
-            option(value='5') ★★★★★
-            option(value='4') ★★★★☆
-            option(value='3') ★★★☆☆
-            option(value='2') ★★☆☆☆
-            option(value='1') ★☆☆☆☆
+          .form-group
+            label(for='menu') 먹은 음식
+            input#menu.form-control(type='text' name='menu' placeholder='예: 김치찌개, 크림파스타 등')
 
-        .form-group
-          label(for='mood') 분위기
-          input#mood.form-control(type='text' name='mood' placeholder='조용함, 활기참, 가족적, 트렌디 등')
+          .form-group
+            label(for='taste') 맛 평점
+            select#taste.form-control(name='taste')
+              option(value='5') ★★★★★
+              option(value='4') ★★★★☆
+              option(value='3') ★★★☆☆
+              option(value='2') ★★☆☆☆
+              option(value='1') ★☆☆☆☆
 
-        .form-group
-          label(for='memo') 추가 메모
-          textarea#memo.form-control(name='memo' rows='4' placeholder='위생 상태, 위치, 걸리는 시간 등을 적어주세요')
+          .form-group
+            label(for='mood') 분위기
+            input#mood.form-control(type='text' name='mood' placeholder='조용함, 활기참, 가족적, 트렌디 등')
 
-        .form-group
-          label(for='recommend') 추천 여부
-          select#recommend.form-control(name='recommend')
-            option(value='yes') 추천해요 👍
-            option(value='no') 아쉬워요 👎
+          .form-group
+            label(for='memo') 추가 메모
+            textarea#memo.form-control(name='memo' rows='4' placeholder='위생 상태, 위치, 걸리는 시간 등을 적어주세요')
 
-        button.btn.btn-success.btn-block(type='submit') 작성 완료
+          .form-group
+            label(for='recommend') 추천 여부
+            select#recommend.form-control(name='recommend')
+              option(value='yes') 추천해요 👍
+              option(value='no') 아쉬워요 👎
+
+          button.btn.btn-success.btn-block(type='submit') 작성 완료
+          button.btn.btn-secondary.btn-block(type='button')#hide-form-btn 취소
 
     .container-fluid.posts.mt-5
-      //- ⭐ [수정됨] 카테고리 필터 버튼 추가
-      .mb-4.text-center
-        - const categories = ['전체', '한식', '중식', '일식', '양식', '분식', '기타']
-        each cat in categories
-          //- currentCategory 변수를 사용하여 현재 선택된 카테고리에 다른 스타일 적용
-          a(href=`/?category=${cat}`, class=`btn ${currentCategory === cat ? 'btn-primary' : 'btn-outline-secondary'} mr-2 mb-2`)= cat
-
-      //- 기존 list.pug 포함
+      //- (중략) 글 목록을 보여주는 부분은 동일하게 유지됩니다.
       include list.pug
 
-    script(src='https://code.jquery.com/jquery-3.3.1.slim.min.js')
-    script(src='https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js')
+    //- 🟢 3. 자바스크립트 마법 코드를 추가합니다.
+    script.
+      // "새 리뷰 작성하기" 버튼을 찾습니다.
+      const showButton = document.getElementById('show-form-btn');
+      // "취소" 버튼을 찾습니다.
+      const hideButton = document.getElementById('hide-form-btn');
+      // 숨겨진 폼이 담긴 영역을 찾습니다.
+      const formWrapper = document.getElementById('review-form-wrapper');
+      // 폼 자체를 찾습니다.
+      const reviewForm = document.getElementById('new-review-form');
 
+      // "새 리뷰 작성하기" 버튼을 클릭하면,
+      showButton.addEventListener('click', () => {
+        formWrapper.style.display = 'block'; // 폼 영역을 보여줍니다.
+        showButton.style.display = 'none'; // "새 리뷰 작성하기" 버튼은 숨깁니다.
+      });
+      
+      // "취소" 버튼을 클릭하면,
+      hideButton.addEventListener('click', () => {
+        formWrapper.style.display = 'none'; // 폼 영역을 다시 숨깁니다.
+        showButton.style.display = 'block'; // "새 리뷰 작성하기" 버튼을 다시 보여줍니다.
+      });
+
+      // 폼이 "제출"될 때의 이벤트를 가로챕니다.
+      reviewForm.addEventListener('submit', (event) => {
+        // 폼의 기본 동작(페이지 새로고침)을 막습니다. (가장 중요!)
+        event.preventDefault();
+
+        // 폼에 입력된 데이터들을 가져옵니다.
+        const formData = new FormData(reviewForm);
+        const data = Object.fromEntries(formData.entries());
+
+        // 'fetch'를 사용해서 백엔드 API로 데이터를 비동기적으로 보냅니다.
+        fetch('/api/reviews', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        })
+        .then(response => {
+          if (response.ok) {
+            alert('리뷰가 성공적으로 등록되었습니다!');
+            // 성공하면 페이지를 새로고침해서 방금 쓴 글을 목록에서 확인합니다.
+            window.location.reload();
+          } else {
+            alert('리뷰 등록에 실패했습니다. 다시 시도해주세요.');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('서버와 통신 중 오류가 발생했습니다.');
+        });
+      });
