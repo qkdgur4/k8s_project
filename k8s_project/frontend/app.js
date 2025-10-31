@@ -6,28 +6,42 @@ const app = express();
 const PORT = process.env.PORT || 8000;
 const API_ADDR = process.env.GUESTBOOK_API_ADDR;
 
-// Pug 템플릿 엔진 설정
+// Pug 템플릿 엔진 및 public 폴더 설정
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
-
-// 🟢 public 폴더를 정적 파일 제공 폴더로 설정 (main.js, style.css 등을 위함)
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 🟢 메인 페이지 라우트: 백엔드에서 데이터를 가져와 home.pug를 렌더링
-app.get('/', async (req, res) => {
+// 헬퍼 함수: 백엔드에서 리뷰 데이터를 가져옵니다.
+const getReviewsData = async (category) => {
     try {
-        const category = req.query.category || '전체';
-        // 백엔드 API로 리뷰 목록 요청
         const response = await axios.get(`${API_ADDR}/api/reviews`, { params: { category } });
-        // 가져온 데이터와 함께 페이지 렌더링
-        res.render('home', {
-            reviews: response.data,
-            currentCategory: category
-        });
+        return response.data;
     } catch (error) {
-        console.error("Error fetching reviews:", error);
-        res.status(500).send("Error fetching reviews from backend");
+        console.error("Error fetching reviews from backend:", error.message);
+        return []; // 에러 발생 시 빈 배열 반환
     }
+};
+
+// 🟢 1. 메인 페이지('/') 라우트
+app.get('/', async (req, res) => {
+    const category = req.query.category || '전체';
+    const reviews = await getReviewsData(category);
+    res.render('home', {
+        reviews: reviews,
+        currentCategory: category
+    });
+});
+
+// 🟢 2. '새 리뷰 쓰기' 페이지('/reviews/new') 라우트 추가!
+// 이 주소로 직접 접속하거나 새로고침해도 메인 페이지와 동일한 데이터를 가지고
+// 동일한 템플릿을 렌더링하여 SPA 경험을 유지합니다.
+app.get('/reviews/new', async (req, res) => {
+    const category = '전체'; // 새 글 작성 시에는 항상 전체 목록을 보여줌
+    const reviews = await getReviewsData(category);
+    res.render('home', {
+        reviews: reviews,
+        currentCategory: category
+    });
 });
 
 app.listen(PORT, () => {
