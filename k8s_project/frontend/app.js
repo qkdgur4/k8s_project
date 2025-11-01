@@ -1,6 +1,9 @@
+// frontend/app.js (진짜 최종 완성본)
+
 const express = require('express');
 const path = require('path');
 const axios = require('axios');
+const { createProxyMiddleware } = require('http-proxy-middleware');
 const app = express();
 
 const PORT = process.env.PORT || 8000;
@@ -11,38 +14,44 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
 app.use(express.static(path.join(__dirname, 'public')));
 
+// API 프록시 설정 ('/api'로 시작하는 '브라우저'의 요청을 백엔드로 전달)
+// 이 부분은 main.js의 fetch 요청을 위해 반드시 필요합니다.
+app.use('/api', createProxyMiddleware({
+    target: API_ADDR,
+    changeOrigin: true,
+    // 🟢 중요: 프록시가 /api 경로를 제거하지 않도록 pathRewrite 규칙을 수정합니다.
+    // 하지만 우리는 백엔드에서 /api를 제거했으므로, 이 규칙이 더 이상 복잡할 필요가 없습니다.
+    // 더 간단한 방법은 백엔드에 /api를 다시 추가하는 것이지만, 지금은 프론트에서 해결하겠습니다.
+    pathRewrite: {
+        '^/api': '/', // '/api/reviews' -> '/reviews'
+    },
+}));
+
 // 헬퍼 함수: 백엔드에서 리뷰 데이터를 가져옵니다.
 const getReviewsData = async (category) => {
     try {
-        const response = await axios.get(`${API_ADDR}/api/reviews`, { params: { category } });
+        // 🟢🟢🟢 바로 여기가 수정된 부분입니다! /api를 제거했습니다. 🟢🟢🟢
+        const response = await axios.get(`${API_ADDR}/reviews`, { params: { category } });
         return response.data;
     } catch (error) {
         console.error("Error fetching reviews from backend:", error.message);
-        return []; // 에러 발생 시 빈 배열 반환
+        return [];
     }
 };
 
-// 🟢 1. 메인 페이지('/') 라우트
-app.get('/', async (req, res) => {
+// 메인 페이지('/') 및 '새 리뷰' 페이지('/reviews/new') 라우트
+const renderHomePage = async (req, res) => {
     const category = req.query.category || '전체';
     const reviews = await getReviewsData(category);
     res.render('home', {
         reviews: reviews,
         currentCategory: category
     });
-});
+};
 
-// 🟢 2. '새 리뷰 쓰기' 페이지('/reviews/new') 라우트 추가!
-// 이 주소로 직접 접속하거나 새로고침해도 메인 페이지와 동일한 데이터를 가지고
-// 동일한 템플릿을 렌더링하여 SPA 경험을 유지합니다.
-app.get('/reviews/new', async (req, res) => {
-    const category = '전체'; // 새 글 작성 시에는 항상 전체 목록을 보여줌
-    const reviews = await getReviewsData(category);
-    res.render('home', {
-        reviews: reviews,
-        currentCategory: category
-    });
-});
+app.get('/', renderHomePage);
+app.get('/reviews/new', renderHomePage);
+
 
 app.listen(PORT, () => {
     console.log(`Frontend service listening on port ${PORT}`);
