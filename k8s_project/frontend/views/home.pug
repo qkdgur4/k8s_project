@@ -1,4 +1,4 @@
-// frontend/views/home.pug (최종 완성본 - Validation 추가)
+// frontend/views/home.pug (최종 완성본 - 디자인 및 UX 개선)
 
 doctype html
 html
@@ -9,103 +9,127 @@ html
     link(rel='stylesheet', href='https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css')
     link(rel='stylesheet', href='/css/style.css')
   body
-    .header.bg-light.mb-0
+    //- 🟢 1. 헤더에 ID 추가 (숨기기/보여주기 용)
+    .header.bg-light.mb-0#header-section
       .container
         h1: a(href='/', class='text-dark text-decoration-none') 한입로그🍽
         p.text-muted.mb-0 작은 한입에도 이야기가 담겨요 🍲
-    .container.mb-5
-      h3.mb-4.text-primary 글 작성하기
-      button.btn.btn-outline-primary.mb-3#show-form-btn 새 리뷰 작성하기
-      #review-form-wrapper(style="display: none;")
-        form#new-review-form
-          .form-group
-            label(for='name') 이름
-            //- 🟢 'required' 속성 추가
-            input#name.form-control(type='text' name='name' placeholder='익명도 가능해요' required)
-          .form-group
-            label(for='store') 가게명
-            //- 🟢 'required' 속성 추가
-            input#store.form-control(type='text' name='store' placeholder='방문한 음식점 이름을 적어주세요' required)
-          .form-group
-            label(for='category') 음식 분류
-            //- 🟢 'required' 속성 추가
-            select#category.form-control(name='category' required)
-              option(value='') -- 선택 --
-              option(value='한식') 한식
-              option(value='중식') 중식
-              option(value='일식') 일식
-              option(value='양식') 양식
-              option(value='분식') 분식
-              option(value='기타') 기타
-          .form-group
-            label(for='menu') 먹은 음식
-            //- 🟢 'required' 속성 추가
-            input#menu.form-control(type='text' name='menu' placeholder='예: 김치찌개, 크림파스타 등' required)
-          .form-group
-            label(for='taste') 맛 평점
-            //- 🟢 'required' 속성 추가
-            select#taste.form-control(name='taste' required)
-              option(value='') -- 선택 --
-              option(value='5') ★★★★★
-              option(value='4') ★★★★☆
-              option(value='3') ★★★☆☆
-              option(value='2') ★★☆☆☆
-              option(value='1') ★☆☆☆☆
-          .form-group
-            label(for='mood') 분위기
-            //- 🟢 'required' 속성 추가
-            input#mood.form-control(type='text' name='mood' placeholder='조용함, 활기참, 가족적, 트렌디 등' required)
-          .form-group
-            label(for='memo') 추가 메모
-            //- 메모는 선택 사항이므로 'required'를 추가하지 않습니다.
-            textarea#memo.form-control(name='memo' rows='4' placeholder='위생 상태, 위치, 걸리는 시간 등을 적어주세요')
-          .form-group
-            label(for='recommend') 추천 여부
-            //- 🟢 'required' 속성 추가
-            select#recommend.form-control(name='recommend' required)
-              option(value='') -- 선택 --
-              option(value='yes') 추천해요 👍
-              option(value='no') 아쉬워요 👎
-          button.btn.btn-success.btn-block(type='submit') 작성 완료
-          button.btn.btn-secondary.btn-block(type='button')#hide-form-btn 취소
-    .container-fluid.posts.mt-5
-      .mb-4.text-center
-        - const categories = ['전체', '한식', '중식', '일식', '양식', '분식', '기타']
-        each cat in categories
-          a(href=`/?category=${cat}`, class=`btn ${currentCategory === cat ? 'btn-primary' : 'btn-outline-secondary'} mr-2 mb-2`)= cat
-      include list.pug
-  
-  //- (페이지 하단 스크립트 부분은 이전과 동일)
-  script.
-    document.addEventListener('DOMContentLoaded', () => {
-      const showButton = document.getElementById('show-form-btn');
-      const hideButton = document.getElementById('hide-form-btn');
-      const formWrapper = document.getElementById('review-form-wrapper');
-      
-      function updateFormVisibility() {
-        if (window.location.pathname === '/reviews/new') {
-          formWrapper.style.display = 'block';
-          showButton.style.display = 'none';
-        } else {
-          formWrapper.style.display = 'none';
-          showButton.style.display = 'block';
+
+    //- 🟢 2. 새 리뷰 작성 폼 섹션 (기본적으로 숨겨짐)
+    .container.mb-5#form-section(style="display: none;")
+      h3.mb-4.text-primary ✏️ 새 리뷰 작성
+      form#new-review-form
+        .form-group
+          label(for='name') 이름
+          input#name.form-control(type='text' name='name' placeholder='익명도 가능해요' required)
+        .form-group
+          label(for='store') 가게명
+          input#store.form-control(type='text' name='store' placeholder='방문한 음식점 이름을 적어주세요' required)
+        .form-group
+          label(for='category') 음식 분류
+          select#category.form-control(name='category' required)
+            option(value='') -- 선택 --
+            option(value='한식') 한식
+            option(value='중식') 중식
+            option(value='일식') 일식
+            option(value='양식') 양식
+            option(value='분식') 분식
+            option(value='기타') 기타
+        .form-group
+          label(for='menu') 먹은 음식
+          input#menu.form-control(type='text' name='menu' placeholder='예: 김치찌개, 크림파스타 등' required)
+        .form-group
+          label(for='taste') 맛 평점
+          select#taste.form-control(name='taste' required)
+            option(value='') -- 선택 --
+            option(value='5') ★★★★★
+            option(value='4') ★★★★☆
+            option(value='3') ★★★☆☆
+            option(value='2') ★★☆☆☆
+            option(value='1') ★☆☆☆☆
+        .form-group
+          label(for='mood') 분위기
+          input#mood.form-control(type='text' name='mood' placeholder='조용함, 활기참, 가족적, 트렌디 등' required)
+        .form-group
+          label(for='memo') 추가 메모
+          textarea#memo.form-control(name='memo' rows='4' placeholder='위생 상태, 위치, 걸리는 시간 등을 적어주세요')
+        .form-group
+          label(for='recommend') 추천 여부
+          select#recommend.form-control(name='recommend' required)
+            option(value='') -- 선택 --
+            option(value='yes') 추천해요 👍
+            option(value='no') 아쉬워요 👎
+        button.btn.btn-success.btn-block(type='submit') 작성 완료
+        button.btn.btn-secondary.btn-block(type='button')#hide-form-btn 취소
+
+    //- 🟢 3. 메인 콘텐츠 (카테고리 필터 + 글 목록)
+    #page-content
+      .container.mb-5
+        //- 🟢 4. 디자인 수정 (버튼을 작게 만들고 오른쪽으로 이동)
+        .d-flex.justify-content-between.align-items-center.mb-4
+          //- 카테고리 필터
+          div
+            - const categories = ['전체', '한식', '중식', '일식', '양식', '분식', '기타']
+            each cat in categories
+              a(href=`/?category=${cat}`, class=`btn ${currentCategory === cat ? 'btn-primary' : 'btn-outline-secondary'} mr-2 mb-2`)= cat
+          //- 새 리뷰 작성 버튼
+          div
+            button.btn.btn-primary.btn-sm#show-form-btn ✏️ 새 리뷰 작성
+
+      .container-fluid.posts.mt-5
+        include list.pug
+
+    //- 🟢 5. 자바스크립트 로직 대폭 수정
+    script.
+      document.addEventListener('DOMContentLoaded', () => {
+        // 모든 섹션과 버튼을 선택합니다.
+        const header = document.getElementById('header-section');
+        const pageContent = document.getElementById('page-content');
+        const formSection = document.getElementById('form-section');
+        const showButton = document.getElementById('show-form-btn');
+        const hideButton = document.getElementById('hide-form-btn');
+
+        // 폼을 보여줄지 말지 결정하는 함수
+        function toggleSections(showForm) {
+          if (showForm) {
+            // 폼을 보여주고, 헤더와 메인 콘텐츠(목록)는 숨깁니다.
+            formSection.style.display = 'block';
+            header.style.display = 'none';
+            pageContent.style.display = 'none';
+          } else {
+            // 폼을 숨기고, 헤더와 메인 콘텐츠(목록)를 보여줍니다.
+            formSection.style.display = 'none';
+            header.style.display = 'block';
+            pageContent.style.display = 'block';
+          }
         }
-      }
 
-      showButton.addEventListener('click', () => {
-        history.pushState(null, '', '/reviews/new');
-        updateFormVisibility();
+        // URL을 기반으로 현재 상태를 결정하는 함수
+        function updateVisibility() {
+          if (window.location.pathname === '/reviews/new') {
+            toggleSections(true); // /reviews/new 주소면 폼을 보여줌
+          } else {
+            toggleSections(false); // 그 외 모든 주소(/)는 목록을 보여줌
+          }
+        }
+
+        // "새 리뷰 작성" 버튼 클릭 시
+        showButton.addEventListener('click', () => {
+          history.pushState(null, '', '/reviews/new'); // URL을 /reviews/new로 변경
+          updateVisibility(); // 폼 보여주기
+        });
+
+        // "취소" 버튼 클릭 시
+        hideButton.addEventListener('click', () => {
+          history.pushState(null, '', '/'); // URL을 / 로 변경
+          updateVisibility(); // 폼 숨기기
+        });
+
+        // 브라우저 뒤로가기/앞으로가기 버튼 클릭 시
+        window.addEventListener('popstate', updateVisibility);
+        
+        // 페이지가 처음 로드될 때
+        updateVisibility();
       });
 
-      hideButton.addEventListener('click', () => {
-        history.pushState(null, '', '/');
-        updateFormVisibility();
-      });
-
-      window.addEventListener('popstate', () => {
-        updateFormVisibility();
-      });
-
-      updateFormVisibility();
-    });
-  script(src='/main.js')
+    script(src='/main.js')

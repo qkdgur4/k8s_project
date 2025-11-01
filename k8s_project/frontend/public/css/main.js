@@ -1,29 +1,7 @@
-// "새 리뷰 작성하기" 버튼
-const showButton = document.getElementById('show-form-btn');
-// "취소" 버튼
-const hideButton = document.getElementById('hide-form-btn');
-// 숨겨진 폼이 담긴 영역
-const formWrapper = document.getElementById('review-form-wrapper');
-// 폼 자체
-const reviewForm = document.getElementById('new-review-form');
-
-// "새 리뷰 작성하기" 버튼 클릭 이벤트
-if (showButton) {
-  showButton.addEventListener('click', () => {
-    formWrapper.style.display = 'block';
-    showButton.style.display = 'none';
-  });
-}
-
-// "취소" 버튼 클릭 이벤트
-if (hideButton) {
-  hideButton.addEventListener('click', () => {
-    formWrapper.style.display = 'none';
-    showButton.style.display = 'block';
-  });
-}
+// frontend/public/main.js (최종 완성본)
 
 // 폼 "제출" 이벤트
+const reviewForm = document.getElementById('new-review-form');
 if (reviewForm) {
   reviewForm.addEventListener('submit', (event) => {
     event.preventDefault(); // 기본 새로고침 동작 방지
@@ -37,12 +15,15 @@ if (reviewForm) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     })
-    .then(response => {
+    .then(async response => { // 🟢 async 추가
       if (response.ok) {
         alert('리뷰가 성공적으로 등록되었습니다!');
-        window.location.reload(); // 성공 시 페이지 새로고침
+        // 🟢 페이지 새로고침 대신, URL을 / 로 변경하여 목록으로 돌아갑니다.
+        window.location.href = '/'; 
       } else {
-        alert('리뷰 등록에 실패했습니다. 다시 시도해주세요.');
+        // 🟢 백엔드에서 보낸 에러 메시지를 표시
+        const errorData = await response.json();
+        alert('리뷰 등록 실패: ' + (errorData.error || '서버 응답 오류'));
       }
     })
     .catch(error => {

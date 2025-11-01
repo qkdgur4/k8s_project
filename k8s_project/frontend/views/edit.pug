@@ -1,4 +1,4 @@
-//- edit.pug (최종 완성본)
+// frontend/views/edit.pug (최종 완성본 - 오직 폼만)
 
 doctype html
 html
@@ -8,12 +8,11 @@ html
     link(rel="stylesheet", href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css")
     link(rel="stylesheet", href="/css/style.css")
   body
+    //- 🟢 헤더, 목록 등 다른 모든 요소를 제거하고 폼만 남깁니다.
     .container.mt-5.mb-5
       h2 📝 리뷰 수정하기
       
-      //- 🟢 1. 폼에 id를 부여하고 action/method 속성 제거
       form#edit-form
-        //- 🟢 2. 리뷰 ID를 폼 안에 숨겨둡니다.
         input(type="hidden", name="id", value=review._id)
 
         .form-group
@@ -26,25 +25,25 @@ html
         
         .form-group
           label(for="category") 카테고리
-          select#category.form-control(name='category')
+          select#category.form-control(name='category' required)
             - const categories = ['한식', '중식', '일식', '양식', '분식', '기타']
             each cat in categories
               option(value=cat, selected=(review.category === cat))= cat
         
         .form-group
           label(for="menu") 메뉴
-          input#menu.form-control(type="text", name="menu", value=review.menu)
+          input#menu.form-control(type="text", name="menu", value=review.menu, required)
         
         .form-group
           label(for="taste") 맛 평점
-          select#taste.form-control(name='taste')
+          select#taste.form-control(name='taste' required)
             - const ratings = { '5': '★★★★★', '4': '★★★★☆', '3': '★★★☆☆', '2': '★★☆☆☆', '1': '★☆☆☆☆' }
             each label, val in ratings
               option(value=val, selected=(review.taste === val))= label
-
+        
         .form-group
           label(for="mood") 분위기
-          input#mood.form-control(type="text", name="mood", value=review.mood)
+          input#mood.form-control(type="text", name="mood", value=review.mood, required)
 
         .form-group
           label(for="memo") 메모
@@ -52,38 +51,37 @@ html
 
         .form-group
           label(for="recommend") 추천 여부
-          select#recommend.form-control(name="recommend")
+          select#recommend.form-control(name="recommend" required)
+            option(value='') -- 선택 --
             option(value="yes", selected=(review.recommend === 'yes')) 추천해요 👍
             option(value="no", selected=(review.recommend === 'no')) 아쉬워요 👎
 
         button.btn.btn-success.btn-block(type="submit") 수정 완료
         button.btn.btn-secondary.btn-block(type="button", onclick="window.close()") 닫기
 
-  //- 🟢 3. 폼 제출을 처리할 자바스크립트 추가
   script.
     document.getElementById('edit-form').addEventListener('submit', async (event) => {
-      event.preventDefault(); // 폼의 기본 동작(새로고침) 중지
+      event.preventDefault();
 
       const form = event.target;
       const formData = new FormData(form);
       const data = Object.fromEntries(formData.entries());
-      const reviewId = data.id; // 숨겨둔 ID 값 가져오기
+      const reviewId = data.id;
 
       try {
         const response = await fetch(`/api/reviews/${reviewId}`, {
-          method: 'PUT', // 🟢 POST가 아닌 PUT으로 수정 요청
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data),
         });
 
         if (response.ok) {
           alert('수정되었습니다!');
-          window.opener?.location.reload(); // 🟢 메인 창(부모 창)을 새로고침
-          window.close(); // 현재 창 닫기
+          window.opener?.location.reload(); 
+          window.close(); 
         } else {
-          alert('수정 실패: 서버 응답 오류');
+          const errorData = await response.json();
+          alert('수정 실패: ' + (errorData.error || '서버 응답 오류'));
         }
       } catch (err) {
         alert('수정 중 오류 발생: ' + err.message);
