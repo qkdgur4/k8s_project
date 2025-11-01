@@ -1,4 +1,4 @@
-// frontend/views/list.pug (최종 완성본 - Tag Link 추가)
+// frontend/views/list.pug (최종 완성본 - URL 인코딩 추가)
 
 if reviews && reviews.length > 0
   h3.my-4.text-primary 작성된 글 목록
@@ -23,25 +23,32 @@ if reviews && reviews.length > 0
               strong 태그:
               if Array.isArray(review.tags) && review.tags.length > 0
                 each tag in review.tags
-                  //- 🟢 1. <span>을 <a> 태그로 변경
                   a.badge.badge-info.mr-1.mb-1(href=`/?tag=${tag}`)= tag
               else
                 span.text-muted.ml-2 -
 
             p.card-text.mb-3
               strong 추천:
-              |
               if review.recommend === 'yes'
                 span.badge.badge-success.ml-2 추천해요 👍
               else
                 span.badge.badge-secondary.ml-2 아쉬워요 👎
 
-            //- (이하 코드는 이전과 동일)
             .d-flex.justify-content-between.align-items-end.border-top.pt-3.mt-3
               small.text-muted.review-memo #{review.memo || '메모 없음'}
               small.text-muted.review-date #{new Date(review.createdAt).toLocaleDateString()}
             
             .text-right.mt-2
+              //- 🟢🟢🟢 바로 여기가 수정된 부분입니다! 🟢🟢🟢
+              //- 1. encodeURIComponent() 함수로 review.store를 감쌌습니다.
+              //-    (review.store가 비어있을 경우를 대비해 || '' 안전장치 추가)
+              a.btn.btn-sm.btn-outline-info.mr-2(
+                href=`https://search.naver.com/search.naver?query=${encodeURIComponent(review.store || '')}`,
+                target='_blank',
+                rel='noopener'
+              ) 🗺️ 자세히 보기
+              
+              //- 2. 기존 수정/삭제 버튼
               a.btn.btn-sm.btn-outline-secondary(
                 href=`/reviews/${review._id}/edit`,
                 target='_blank',
