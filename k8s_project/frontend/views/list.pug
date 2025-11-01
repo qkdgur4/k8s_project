@@ -1,4 +1,4 @@
-// frontend/views/list.pug (최종 완성본 - Tags 업그레이드)
+// frontend/views/list.pug (최종 완성본 - Tag Link 추가)
 
 if reviews && reviews.length > 0
   h3.my-4.text-primary 작성된 글 목록
@@ -19,13 +19,12 @@ if reviews && reviews.length > 0
 
             h6.card-subtitle.mb-3.text-muted #{review.category} / #{review.menu}
 
-            //- 🟢 "분위기" 대신 "태그" 목록 표시
             p.card-text.mb-3
               strong 태그:
-              if review.tags && review.tags.length > 0
+              if Array.isArray(review.tags) && review.tags.length > 0
                 each tag in review.tags
-                  //- 🟢 Bootstrap 'badge'를 사용해 태그를 예쁘게 표시
-                  span.badge.badge-info.mr-1.mb-1= tag
+                  //- 🟢 1. <span>을 <a> 태그로 변경
+                  a.badge.badge-info.mr-1.mb-1(href=`/?tag=${tag}`)= tag
               else
                 span.text-muted.ml-2 -
 
@@ -37,6 +36,7 @@ if reviews && reviews.length > 0
               else
                 span.badge.badge-secondary.ml-2 아쉬워요 👎
 
+            //- (이하 코드는 이전과 동일)
             .d-flex.justify-content-between.align-items-end.border-top.pt-3.mt-3
               small.text-muted.review-memo #{review.memo || '메모 없음'}
               small.text-muted.review-date #{new Date(review.createdAt).toLocaleDateString()}

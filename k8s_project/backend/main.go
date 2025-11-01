@@ -1,4 +1,4 @@
-// backend/main.go (최종 완성본 - Tags 업그레이드)
+// backend/main.go (최종 완성본 - Tag Filter 추가)
 
 package main
 
@@ -17,7 +17,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// Review 구조체: 🟢 Mood -> Tags 로 변경
+// ... (Review 구조체는 이전과 동일) ...
 type Review struct {
 	ID        primitive.ObjectID `bson:"_id,omitempty" json:"_id,omitempty"`
 	Name      string             `bson:"name" json:"name"`
@@ -25,7 +25,7 @@ type Review struct {
 	Category  string             `bson:"category" json:"category"`
 	Menu      string             `bson:"menu" json:"menu"`
 	Taste     string             `bson:"taste" json:"taste"`
-	Tags      []string           `bson:"tags" json:"tags"` // 🟢 "mood" 대신 "tags" 배열
+	Tags      []string           `bson:"tags" json:"tags"`
 	Memo      string             `bson:"memo" json:"memo"`
 	Recommend string             `bson:"recommend" json:"recommend"`
 	CreatedAt time.Time          `bson:"createdAt" json:"createdAt"`
@@ -35,7 +35,7 @@ type Review struct {
 var reviewCollection *mongo.Collection
 
 func main() {
-	// ... (DB 연결 부분은 이전과 동일) ...
+	// ... (DB 연결, 서버 설정은 이전과 동일) ...
 	port := os.Getenv("PORT")
 	mongoURI := os.Getenv("GUESTBOOK_DB_ADDR")
 	if port == "" { port = "8000" }
@@ -63,52 +63,45 @@ func main() {
 	router.Run(":" + port)
 }
 
-// (getReviews 핸들러는 이전과 동일)
+// --- 핸들러 함수들 ---
+
 func getReviews(c *gin.Context) {
 	category := c.Query("category")
+	tag := c.Query("tag") // 🟢 1. 'tag' 쿼리 파라미터 받기
+
 	filter := bson.M{}
-	if category != "" && category != "전체" { filter["category"] = category }
+	
+	// 🟢 2. 필터 로직 수정
+	if category != "" && category != "전체" {
+		filter["category"] = category
+	} else if tag != "" {
+		// 🟢 3. 'tags' 배열에 해당 태그가 포함되어 있는지 검색
+		filter["tags"] = tag 
+	}
+	
 	opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}})
 	cursor, err := reviewCollection.Find(context.Background(), filter, opts)
 	if err != nil { c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch reviews"}); return }
 	defer cursor.Close(context.Background())
 	var reviews []Review
 	if err = cursor.All(context.Background(), &reviews); err != nil { c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode reviews"}); return }
+	
 	c.JSON(http.StatusOK, reviews)
 }
 
+// (createReview, deleteReview, getReviewByID, updateReview 핸들러는 이전과 동일)
 func createReview(c *gin.Context) {
 	var review Review
-	if err := c.ShouldBindJSON(&review); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON body"})
-		return
-	}
-
-	// 🟢 백엔드 유효성 검사 (Tags 확인)
-	if review.Name == "" || review.Store == "" || review.Category == "" || review.Menu == "" || review.Taste == "" || review.Recommend == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "필수 필드를 입력해야 합니다."})
-		return
-	}
-	// 🟢 "최소 1개 이상" 태그 선택 검사
-	if review.Tags == nil || len(review.Tags) == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "태그는 최소 1개 이상 선택해야 합니다."})
-		return
-	}
-	// 🟢 검사 끝
-
+	if err := c.ShouldBindJSON(&review); err != nil { c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON body"}); return }
+	if review.Name == "" || review.Store == "" || review.Category == "" || review.Menu == "" || review.Taste == "" || review.Recommend == "" { c.JSON(http.StatusBadRequest, gin.H{"error": "모든 필수 필드를 입력해야 합니다."}); return }
+	if review.Tags == nil || len(review.Tags) == 0 { c.JSON(http.StatusBadRequest, gin.H{"error": "태그는 최소 1개 이상 선택해야 합니다."}); return }
 	review.CreatedAt = time.Now()
 	review.UpdatedAt = time.Now()
 	result, err := reviewCollection.InsertOne(context.Background(), review)
-	if err != nil {
-		log.Println("Error saving review:", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save review"})
-		return
-	}
+	if err != nil { log.Println("Error saving review:", err); c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save review"}); return }
 	review.ID = result.InsertedID.(primitive.ObjectID)
 	c.JSON(http.StatusCreated, review)
 }
-
-// (deleteReview, getReviewByID 핸들러는 이전과 동일)
 func deleteReview(c *gin.Context) {
 	id, err := primitive.ObjectIDFromHex(c.Param("id"))
 	if err != nil { c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"}); return }
@@ -125,54 +118,22 @@ func getReviewByID(c *gin.Context) {
 	if err != nil { c.JSON(http.StatusNotFound, gin.H{"error": "Review not found"}); return }
 	c.JSON(http.StatusOK, review)
 }
-
-
 func updateReview(c *gin.Context) {
 	id, err := primitive.ObjectIDFromHex(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
-		return
-	}
-	
+	if err != nil { c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"}); return }
 	var reviewUpdate Review
-	if err := c.ShouldBindJSON(&reviewUpdate); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON body"})
-		return
-	}
-
-	// 🟢 백엔드 유효성 검사 (수정)
-	if reviewUpdate.Name == "" || reviewUpdate.Store == "" || reviewUpdate.Category == "" || reviewUpdate.Menu == "" || reviewUpdate.Taste == "" || reviewUpdate.Recommend == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "필수 필드를 입력해야 합니다."})
-		return
-	}
-	// 🟢 "최소 1개 이상" 태그 선택 검사
-	if reviewUpdate.Tags == nil || len(reviewUpdate.Tags) == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "태그는 최소 1개 이상 선택해야 합니다."})
-		return
-	}
-	// 🟢 검사 끝
-
+	if err := c.ShouldBindJSON(&reviewUpdate); err != nil { c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON body"}); return }
+	if reviewUpdate.Name == "" || reviewUpdate.Store == "" || reviewUpdate.Category == "" || reviewUpdate.Menu == "" || reviewUpdate.Taste == "" || reviewUpdate.Recommend == "" { c.JSON(http.StatusBadRequest, gin.H{"error": "모든 필수 필드를 입력해야 합니다."}); return }
+	if reviewUpdate.Tags == nil || len(reviewUpdate.Tags) == 0 { c.JSON(http.StatusBadRequest, gin.H{"error": "태그는 최소 1개 이상 선택해야 합니다."}); return }
 	update := bson.M{
 		"$set": bson.M{
-			"name":      reviewUpdate.Name,
-			"store":     reviewUpdate.Store,
-			"category":  reviewUpdate.Category,
-			"menu":      reviewUpdate.Menu,
-			"taste":     reviewUpdate.Taste,
-			"tags":      reviewUpdate.Tags, // 🟢 "mood" 대신 "tags"
-			"memo":      reviewUpdate.Memo,
-			"recommend": reviewUpdate.Recommend,
-			"updatedAt": time.Now(),
+			"name": reviewUpdate.Name, "store": reviewUpdate.Store, "category": reviewUpdate.Category,
+			"menu": reviewUpdate.Menu, "taste": reviewUpdate.Taste, "tags": reviewUpdate.Tags,
+			"memo": reviewUpdate.Memo, "recommend": reviewUpdate.Recommend, "updatedAt": time.Now(),
 		},
 	}
 	result, err := reviewCollection.UpdateOne(context.Background(), bson.M{"_id": id}, update)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update review"})
-		return
-	}
-	if result.ModifiedCount == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Review not found or no changes made"})
-		return
-	}
+	if err != nil { c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update review"}); return }
+	if result.ModifiedCount == 0 { c.JSON(http.StatusNotFound, gin.H{"error": "Review not found or no changes made"}); return }
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }

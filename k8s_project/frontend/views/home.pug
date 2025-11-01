@@ -1,4 +1,4 @@
-// frontend/views/home.pug (최종 완성본 - JS 안정성 강화)
+// frontend/views/home.pug (최종 완성본 - 변수 충돌 해결)
 
 doctype html
 html
@@ -9,6 +9,9 @@ html
     link(rel='stylesheet', href='https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css')
     link(rel='stylesheet', href='/css/style.css')
   body
+    //- 🟢 1. 태그 리스트를 파일 최상단에서 'allTags'라는 이름으로 딱 한 번만 정의합니다.
+    - const allTags = [{emoji: '👥', label: '단체석'}, {emoji: '🪑', label: '입식'}, {emoji: '🧑‍🍳', label: '특별한메뉴'}, {emoji: '🛋️', label: '인테리어'}, {emoji: '🌿', label: '신선한'}, {emoji: '💕', label: '데이트'}, {emoji: '👀', label: '넓은'}, {emoji: '👥', label: '회식'}, {emoji: '🗣️', label: '대화'}, {emoji: '🍙', label: '혼밥'}, {emoji: '👨‍👩‍👧‍👦', label: '가족모임'}, {emoji: '✨', label: '분위기좋은'}, {emoji: '🆕', label: '새로오픈'}]
+
     #header-section.header.bg-light.mb-0
       .container
         h1: a(href='/', class='text-dark text-decoration-none') 한입로그🍽
@@ -17,6 +20,7 @@ html
     #form-section.container.mb-5(style="display: none;")
       h3.mb-4.text-primary ✏️ 새 리뷰 작성
       form#new-review-form
+        //- ... (다른 폼 필드들은 동일) ...
         .form-group
           label(for='name') 이름
           input#name.form-control(type='text' name='name' placeholder='익명도 가능해요' required)
@@ -45,11 +49,12 @@ html
             option(value='3') ★★★☆☆
             option(value='2') ★★☆☆☆
             option(value='1') ★☆☆☆☆
+            
         .form-group
           label 태그 (최소 1개 이상 선택)
           .tag-selector.border.p-3.rounded
-            - const tags = [{emoji: '👥', label: '단체석'}, {emoji: '🪑', label: '입식'}, {emoji: '🧑‍🍳', label: '특별한메뉴'}, {emoji: '🛋️', label: '인테리어'}, {emoji: '🌿', label: '신선한'}, {emoji: '💕', label: '데이트'}, {emoji: '👀', label: '넓은'}, {emoji: '👥', label: '회식'}, {emoji: '🗣️', label: '대화'}, {emoji: '🍙', label: '혼밥'}, {emoji: '👨‍👩‍👧‍👦', label: '가족모임'}, {emoji: '✨', label: '분위기좋은'}, {emoji: '🆕', label: '새로오픈'}]
-            each tag in tags
+            //- 🟢 2. 'const tags' 대신 'allTags' 변수를 사용합니다.
+            each tag in allTags
               .form-check.form-check-inline
                 input.form-check-input(type='checkbox', name='tags', id=`tag-${tag.label}`, value=tag.label)
                 label.form-check-label(for=`tag-${tag.label}`)= `${tag.emoji} ${tag.label}`
@@ -67,69 +72,77 @@ html
 
     #page-content
       .container.mb-5
-        .d-flex.justify-content-between.align-items-center.mb-4
+        .d-flex.justify-content-between.align-items-start.mb-4
           div
+            h5.text-muted 🍱 음식 종류
             - const categories = ['전체', '한식', '중식', '일식', '양식', '분식', '기타']
             each cat in categories
               a(href=`/?category=${cat}`, class=`btn ${currentCategory === cat ? 'btn-primary' : 'btn-outline-secondary'} mr-2 mb-2`)= cat
-          div
-            button.btn.btn-primary.btn-sm#show-form-btn ✏️ 새 리뷰 작성
+          
+          div.ml-4(style="min-width: 200px;")
+            h5.text-muted ✨ 분위기 태그
+            //- 🟢 3. 'const tags' 대신 'allTags' 변수를 사용합니다.
+            select#tag-filter.form-control.form-control-sm
+              option(value='') -- 태그로 분류 --
+              each tag in allTags
+                option(value=tag.label, selected=(currentTag === tag.label))= `${tag.emoji} ${tag.label}`
+
+          div.ml-auto.pl-4
+            button.btn.btn-primary.btn-sm#show-form-btn(style="white-space: nowrap;") ✏️ 새 리뷰 작성
+
       .container-fluid.posts.mt-5
         include list.pug
   
-  //- 🟢🟢🟢 여기가 수정된 스크립트입니다 🟢🟢🟢
+  //- (페이지 하단 스크립트 부분은 이전과 동일)
   script.
     document.addEventListener('DOMContentLoaded', () => {
-      // 모든 섹션과 버튼을 안전하게 선택합니다.
       const header = document.getElementById('header-section');
       const pageContent = document.getElementById('page-content');
       const formSection = document.getElementById('form-section');
       const showButton = document.getElementById('show-form-btn');
       const hideButton = document.getElementById('hide-form-btn');
-
-      // 🟢 'showButton'이 실제로 존재하는지 확인합니다.
-      if (!showButton) {
-        console.error('Error: "show-form-btn"을 찾을 수 없습니다!');
-        return; // 스크립트 실행 중단
-      }
-      // 🟢 'formSection' 등이 실제로 존재하는지 확인합니다.
-      if (!formSection || !hideButton || !header || !pageContent) {
-        console.error('Error: 페이지의 필수 구성요소(form, header 등)를 찾을 수 없습니다!');
-        return; // 스크립트 실행 중단
-      }
-
-      function toggleSections(showForm) {
-        if (showForm) {
-          formSection.style.display = 'block';
-          header.style.display = 'none';
-          pageContent.style.display = 'none';
-        } else {
-          formSection.style.display = 'none';
-          header.style.display = 'block';
-          pageContent.style.display = 'block';
+      
+      if (showButton && formSection && hideButton && header && pageContent) {
+        function toggleSections(showForm) {
+          if (showForm) {
+            formSection.style.display = 'block';
+            header.style.display = 'none';
+            pageContent.style.display = 'none';
+          } else {
+            formSection.style.display = 'none';
+            header.style.display = 'block';
+            pageContent.style.display = 'block';
+          }
         }
-      }
-      function updateVisibility() {
-        if (window.location.pathname === '/reviews/new') {
-          toggleSections(true);
-        } else {
-          toggleSections(false);
+        function updateVisibility() {
+          if (window.location.pathname === '/reviews/new') {
+            toggleSections(true);
+          } else {
+            toggleSections(false);
+          }
         }
+        showButton.addEventListener('click', () => {
+          history.pushState(null, '', '/reviews/new');
+          updateVisibility();
+        });
+        hideButton.addEventListener('click', () => {
+          history.pushState(null, '', '/');
+          updateVisibility();
+        });
+        window.addEventListener('popstate', updateVisibility);
+        updateVisibility();
       }
 
-      // 🟢 "버튼이 존재할 때만" 이벤트를 연결합니다.
-      showButton.addEventListener('click', () => {
-        history.pushState(null, '', '/reviews/new');
-        updateVisibility();
-      });
-
-      // 🟢 "버튼이 존재할 때만" 이벤트를 연결합니다.
-      hideButton.addEventListener('click', () => {
-        history.pushState(null, '', '/');
-        updateVisibility();
-      });
-
-      window.addEventListener('popstate', updateVisibility);
-      updateVisibility();
+      const tagFilter = document.getElementById('tag-filter');
+      if (tagFilter) {
+        tagFilter.addEventListener('change', (e) => {
+          const selectedTag = e.target.value;
+          if (selectedTag) {
+            window.location.href = `/?tag=${selectedTag}`;
+          } else {
+            window.location.href = '/';
+          }
+        });
+      }
     });
   script(src='/main.js')
