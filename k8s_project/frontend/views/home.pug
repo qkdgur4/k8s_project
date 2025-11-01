@@ -1,3 +1,5 @@
+// frontend/views/home.pug (최종 완성본 - Validation 추가)
+
 doctype html
 html
   head
@@ -18,13 +20,17 @@ html
         form#new-review-form
           .form-group
             label(for='name') 이름
-            input#name.form-control(type='text' name='name' placeholder='익명도 가능해요')
+            //- 🟢 'required' 속성 추가
+            input#name.form-control(type='text' name='name' placeholder='익명도 가능해요' required)
           .form-group
             label(for='store') 가게명
-            input#store.form-control(type='text' name='store' placeholder='방문한 음식점 이름을 적어주세요')
+            //- 🟢 'required' 속성 추가
+            input#store.form-control(type='text' name='store' placeholder='방문한 음식점 이름을 적어주세요' required)
           .form-group
             label(for='category') 음식 분류
-            select#category.form-control(name='category')
+            //- 🟢 'required' 속성 추가
+            select#category.form-control(name='category' required)
+              option(value='') -- 선택 --
               option(value='한식') 한식
               option(value='중식') 중식
               option(value='일식') 일식
@@ -33,10 +39,13 @@ html
               option(value='기타') 기타
           .form-group
             label(for='menu') 먹은 음식
-            input#menu.form-control(type='text' name='menu' placeholder='예: 김치찌개, 크림파스타 등')
+            //- 🟢 'required' 속성 추가
+            input#menu.form-control(type='text' name='menu' placeholder='예: 김치찌개, 크림파스타 등' required)
           .form-group
             label(for='taste') 맛 평점
-            select#taste.form-control(name='taste')
+            //- 🟢 'required' 속성 추가
+            select#taste.form-control(name='taste' required)
+              option(value='') -- 선택 --
               option(value='5') ★★★★★
               option(value='4') ★★★★☆
               option(value='3') ★★★☆☆
@@ -44,13 +53,17 @@ html
               option(value='1') ★☆☆☆☆
           .form-group
             label(for='mood') 분위기
-            input#mood.form-control(type='text' name='mood' placeholder='조용함, 활기참, 가족적, 트렌디 등')
+            //- 🟢 'required' 속성 추가
+            input#mood.form-control(type='text' name='mood' placeholder='조용함, 활기참, 가족적, 트렌디 등' required)
           .form-group
             label(for='memo') 추가 메모
+            //- 메모는 선택 사항이므로 'required'를 추가하지 않습니다.
             textarea#memo.form-control(name='memo' rows='4' placeholder='위생 상태, 위치, 걸리는 시간 등을 적어주세요')
           .form-group
             label(for='recommend') 추천 여부
-            select#recommend.form-control(name='recommend')
+            //- 🟢 'required' 속성 추가
+            select#recommend.form-control(name='recommend' required)
+              option(value='') -- 선택 --
               option(value='yes') 추천해요 👍
               option(value='no') 아쉬워요 👎
           button.btn.btn-success.btn-block(type='submit') 작성 완료
@@ -60,16 +73,15 @@ html
         - const categories = ['전체', '한식', '중식', '일식', '양식', '분식', '기타']
         each cat in categories
           a(href=`/?category=${cat}`, class=`btn ${currentCategory === cat ? 'btn-primary' : 'btn-outline-secondary'} mr-2 mb-2`)= cat
-include list.pug
-
-  //- 🟢🟢🟢 1. 이 스크립트 블록을 /main.js 위에 추가하세요. 🟢🟢🟢
+      include list.pug
+  
+  //- (페이지 하단 스크립트 부분은 이전과 동일)
   script.
     document.addEventListener('DOMContentLoaded', () => {
       const showButton = document.getElementById('show-form-btn');
       const hideButton = document.getElementById('hide-form-btn');
       const formWrapper = document.getElementById('review-form-wrapper');
-
-      // 1. URL에 따라 폼 상태를 결정하는 함수
+      
       function updateFormVisibility() {
         if (window.location.pathname === '/reviews/new') {
           formWrapper.style.display = 'block';
@@ -80,26 +92,20 @@ include list.pug
         }
       }
 
-      // 2. "새 리뷰 작성" 버튼 클릭 시
       showButton.addEventListener('click', () => {
-        history.pushState(null, '', '/reviews/new'); // URL 변경
-        updateFormVisibility(); // 폼 보여주기
+        history.pushState(null, '', '/reviews/new');
+        updateFormVisibility();
       });
 
-      // 3. "취소" 버튼 클릭 시
       hideButton.addEventListener('click', () => {
-        history.pushState(null, '', '/'); // URL 되돌리기
-        updateFormVisibility(); // 폼 숨기기
+        history.pushState(null, '', '/');
+        updateFormVisibility();
       });
 
-      // 4. 브라우저 뒤로가기/앞으로가기 버튼 클릭 시
       window.addEventListener('popstate', () => {
         updateFormVisibility();
       });
 
-      // 5. 페이지가 처음 로드될 때
       updateFormVisibility();
     });
-
-  //- 2. main.js는 이 스크립트 블록 '아래'에 있어야 합니다.
   script(src='/main.js')

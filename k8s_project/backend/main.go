@@ -1,4 +1,4 @@
-// backend/main.go (최종 완성본)
+// backend/main.go (최종 완성본 - Validation 추가)
 
 package main
 
@@ -17,7 +17,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// Review 구조체 (데이터 모델)
 type Review struct {
 	ID        primitive.ObjectID `bson:"_id,omitempty" json:"_id,omitempty"`
 	Name      string             `bson:"name" json:"name"`
@@ -40,7 +39,6 @@ func main() {
 	if port == "" { port = "8000" }
 	if mongoURI == "" { log.Fatal("GUESTBOOK_DB_ADDR environment variable is not defined") }
 
-	// DB 연결
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoURI))
@@ -50,16 +48,12 @@ func main() {
 	log.Println("✅ Successfully connected to MongoDB")
 	reviewCollection = client.Database("guestbook").Collection("reviews")
 
-	// Gin 서버 설정
 	router := gin.Default()
 	router.Use(cors.Default())
-
-	// API 라우트 설정 ( /api 그룹 없이 바로 시작)
+	
 	router.GET("/reviews", getReviews)
 	router.POST("/reviews", createReview)
 	router.DELETE("/reviews/:id", deleteReview)
-
-	// 🟢🟢🟢 1. 누락되었던 API 2개 추가 🟢🟢🟢
 	router.GET("/reviews/:id", getReviewByID)
 	router.PUT("/reviews/:id", updateReview)
 
@@ -69,8 +63,8 @@ func main() {
 
 // --- 핸들러 함수들 ---
 
-// (getReviews, createReview, deleteReview 핸들러는 이전과 동일)
 func getReviews(c *gin.Context) {
+	// ... (이전과 동일)
 	category := c.Query("category")
 	filter := bson.M{}
 	if category != "" && category != "전체" { filter["category"] = category }
@@ -85,16 +79,33 @@ func getReviews(c *gin.Context) {
 
 func createReview(c *gin.Context) {
 	var review Review
-	if err := c.ShouldBindJSON(&review); err != nil { c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()}); return }
+	if err := c.ShouldBindJSON(&review); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON body"})
+		return
+	}
+
+	// 🟢🟢🟢 1. 백엔드 유효성 검사 (생성) 🟢🟢🟢
+	// (메모는 선택 사항으로 제외)
+	if review.Name == "" || review.Store == "" || review.Category == "" || review.Menu == "" || review.Taste == "" || review.Mood == "" || review.Recommend == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "모든 필수 필드(이름, 가게명, 분류, 메뉴, 맛, 분위기, 추천 여부)를 입력해야 합니다."})
+		return
+	}
+	// 🟢🟢🟢 검사 끝 🟢🟢🟢
+
 	review.CreatedAt = time.Now()
 	review.UpdatedAt = time.Now()
 	result, err := reviewCollection.InsertOne(context.Background(), review)
-	if err != nil { log.Println("Error saving review:", err); c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save review"}); return }
+	if err != nil {
+		log.Println("Error saving review:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save review"})
+		return
+	}
 	review.ID = result.InsertedID.(primitive.ObjectID)
 	c.JSON(http.StatusCreated, review)
 }
 
 func deleteReview(c *gin.Context) {
+	// ... (이전과 동일)
 	id, err := primitive.ObjectIDFromHex(c.Param("id"))
 	if err != nil { c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"}); return }
 	result, err := reviewCollection.DeleteOne(context.Background(), bson.M{"_id": id})
@@ -103,25 +114,16 @@ func deleteReview(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
 
-// 🟢🟢🟢 2. 새로 추가된 핸들러 2개 🟢🟢🟢
-
-// GET /reviews/:id 핸들러 (1건 조회)
 func getReviewByID(c *gin.Context) {
+	// ... (이전과 동일)
 	id, err := primitive.ObjectIDFromHex(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
-		return
-	}
+	if err != nil { c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"}); return }
 	var review Review
 	err = reviewCollection.FindOne(context.Background(), bson.M{"_id": id}).Decode(&review)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Review not found"})
-		return
-	}
+	if err != nil { c.JSON(http.StatusNotFound, gin.H{"error": "Review not found"}); return }
 	c.JSON(http.StatusOK, review)
 }
 
-// PUT /reviews/:id 핸들러 (1건 수정)
 func updateReview(c *gin.Context) {
 	id, err := primitive.ObjectIDFromHex(c.Param("id"))
 	if err != nil {
@@ -134,6 +136,13 @@ func updateReview(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON body"})
 		return
 	}
+
+	// 🟢🟢🟢 2. 백엔드 유효성 검사 (수정) 🟢🟢🟢
+	if reviewUpdate.Name == "" || reviewUpdate.Store == "" || reviewUpdate.Category == "" || reviewUpdate.Menu == "" || reviewUpdate.Taste == "" || reviewUpdate.Mood == "" || reviewUpdate.Recommend == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "모든 필수 필드(이름, 가게명, 분류, 메뉴, 맛, 분위기, 추천 여부)를 입력해야 합니다."})
+		return
+	}
+	// 🟢🟢🟢 검사 끝 🟢🟢🟢
 
 	update := bson.M{
 		"$set": bson.M{
@@ -148,7 +157,6 @@ func updateReview(c *gin.Context) {
 			"updatedAt": time.Now(),
 		},
 	}
-
 	result, err := reviewCollection.UpdateOne(context.Background(), bson.M{"_id": id}, update)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update review"})
