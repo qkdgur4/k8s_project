@@ -60,5 +60,46 @@ html
         - const categories = ['전체', '한식', '중식', '일식', '양식', '분식', '기타']
         each cat in categories
           a(href=`/?category=${cat}`, class=`btn ${currentCategory === cat ? 'btn-primary' : 'btn-outline-secondary'} mr-2 mb-2`)= cat
-      include list.pug
-    script(src='/main.js')
+include list.pug
+
+  //- 🟢🟢🟢 1. 이 스크립트 블록을 /main.js 위에 추가하세요. 🟢🟢🟢
+  script.
+    document.addEventListener('DOMContentLoaded', () => {
+      const showButton = document.getElementById('show-form-btn');
+      const hideButton = document.getElementById('hide-form-btn');
+      const formWrapper = document.getElementById('review-form-wrapper');
+
+      // 1. URL에 따라 폼 상태를 결정하는 함수
+      function updateFormVisibility() {
+        if (window.location.pathname === '/reviews/new') {
+          formWrapper.style.display = 'block';
+          showButton.style.display = 'none';
+        } else {
+          formWrapper.style.display = 'none';
+          showButton.style.display = 'block';
+        }
+      }
+
+      // 2. "새 리뷰 작성" 버튼 클릭 시
+      showButton.addEventListener('click', () => {
+        history.pushState(null, '', '/reviews/new'); // URL 변경
+        updateFormVisibility(); // 폼 보여주기
+      });
+
+      // 3. "취소" 버튼 클릭 시
+      hideButton.addEventListener('click', () => {
+        history.pushState(null, '', '/'); // URL 되돌리기
+        updateFormVisibility(); // 폼 숨기기
+      });
+
+      // 4. 브라우저 뒤로가기/앞으로가기 버튼 클릭 시
+      window.addEventListener('popstate', () => {
+        updateFormVisibility();
+      });
+
+      // 5. 페이지가 처음 로드될 때
+      updateFormVisibility();
+    });
+
+  //- 2. main.js는 이 스크립트 블록 '아래'에 있어야 합니다.
+  script(src='/main.js')
