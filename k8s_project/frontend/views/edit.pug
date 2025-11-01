@@ -1,4 +1,4 @@
-// frontend/views/edit.pug (최종 완성본 - 오직 폼만)
+// frontend/views/edit.pug (최종 완성본 - Tags 업그레이드)
 
 doctype html
 html
@@ -8,49 +8,59 @@ html
     link(rel="stylesheet", href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css")
     link(rel="stylesheet", href="/css/style.css")
   body
-    //- 🟢 헤더, 목록 등 다른 모든 요소를 제거하고 폼만 남깁니다.
     .container.mt-5.mb-5
       h2 📝 리뷰 수정하기
       
       form#edit-form
         input(type="hidden", name="id", value=review._id)
 
+        //- ... (name, store, category, menu, taste 필드는 이전과 동일)
         .form-group
           label(for="name") 작성자
           input#name.form-control(type="text", name="name", value=review.name, required)
-        
         .form-group
           label(for="store") 가게명
           input#store.form-control(type="text", name="store", value=review.store, required)
-        
         .form-group
           label(for="category") 카테고리
           select#category.form-control(name='category' required)
             - const categories = ['한식', '중식', '일식', '양식', '분식', '기타']
             each cat in categories
               option(value=cat, selected=(review.category === cat))= cat
-        
         .form-group
           label(for="menu") 메뉴
           input#menu.form-control(type="text", name="menu", value=review.menu, required)
-        
         .form-group
           label(for="taste") 맛 평점
           select#taste.form-control(name='taste' required)
             - const ratings = { '5': '★★★★★', '4': '★★★★☆', '3': '★★★☆☆', '2': '★★☆☆☆', '1': '★☆☆☆☆' }
             each label, val in ratings
               option(value=val, selected=(review.taste === val))= label
-        
+
+        //- 🟢 "분위기" 입력창을 "태그" 체크박스로 변경
         .form-group
-          label(for="mood") 분위기
-          input#mood.form-control(type="text", name="mood", value=review.mood, required)
+          label 태그 (최소 1개 이상 선택)
+          .tag-selector.border.p-3.rounded
+            - const tags = [{emoji: '👥', label: '단체석'}, {emoji: '🪑', label: '입식'}, {emoji: '🧑‍🍳', label: '특별한메뉴'}, {emoji: '🛋️', label: '인테리어'}, {emoji: '🌿', label: '신선한'}, {emoji: '💕', label: '데이트'}, {emoji: '👀', label: '넓은'}, {emoji: '👥', label: '회식'}, {emoji: '🗣️', label: '대화'}, {emoji: '🍙', label: '혼밥'}, {emoji: '👨‍👩‍👧‍👦', label: '가족모임'}, {emoji: '✨', label: '분위기좋은'}, {emoji: '🆕', label: '새로오픈'}]
+            each tag in tags
+              .form-check.form-check-inline
+                //- 🟢 name="tags", value=tag.label
+                //- 🟢 🟢 🟢 'checked' 속성 추가: review.tags에 이 태그가 포함되어 있으면 체크됨
+                input.form-check-input(
+                  type='checkbox', 
+                  name='tags', 
+                  id=`tag-${tag.label}`, 
+                  value=tag.label,
+                  checked=(review.tags && review.tags.includes(tag.label))
+                )
+                label.form-check-label(for=`tag-${tag.label}`)= `${tag.emoji} ${tag.label}`
 
         .form-group
-          label(for="memo") 메모
+          label(for='memo') 메모
           textarea#memo.form-control(name="memo", rows='4')= review.memo
 
         .form-group
-          label(for="recommend") 추천 여부
+          label(for='recommend') 추천 여부
           select#recommend.form-control(name="recommend" required)
             option(value='') -- 선택 --
             option(value="yes", selected=(review.recommend === 'yes')) 추천해요 👍
@@ -59,20 +69,35 @@ html
         button.btn.btn-success.btn-block(type="submit") 수정 완료
         button.btn.btn-secondary.btn-block(type="button", onclick="window.close()") 닫기
 
+  //- 🟢 'submit' 이벤트 리스너 수정
   script.
     document.getElementById('edit-form').addEventListener('submit', async (event) => {
       event.preventDefault();
 
       const form = event.target;
       const formData = new FormData(form);
+      
+      // 🟢 1. 'tags'만 배열로 따로 추출합니다.
+      const tags = formData.getAll('tags');
+
+      // 🟢 2. 'tags'를 제외한 나머지 데이터를 객체로 만듭니다.
       const data = Object.fromEntries(formData.entries());
+
+      // 🟢 3. 객체에 'tags' 배열을 다시 삽입합니다.
+      data.tags = tags;
       const reviewId = data.id;
+
+      // 🟢 4. 프론트엔드 유효성 검사 (태그 최소 1개)
+      if (tags.length === 0) {
+        alert('태그를 1개 이상 선택해주세요!');
+        return; // 서버로 전송하지 않고 중단
+      }
 
       try {
         const response = await fetch(`/api/reviews/${reviewId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
+          body: JSON.stringify(data), // 'tags' 배열이 포함된 객체를 전송
         });
 
         if (response.ok) {

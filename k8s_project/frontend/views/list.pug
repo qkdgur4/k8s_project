@@ -1,51 +1,56 @@
+// frontend/views/list.pug (최종 완성본 - Tags 업그레이드)
+
 if reviews && reviews.length > 0
-    h3.my-4.text-primary 작성된 글 목록
-    .row
-        for review in reviews
-            .col-12.mb-4
-                .card.shadow-sm.border-0.rounded
-                    .card-body.p-4
-                        .d-flex.justify-content-between.align-items-center.mb-2
-                            div
-                                h5.card-title.font-weight-bold.mb-0 #{review.store}
-                                small.text-muted (#{review.name})
-                            div.text-right
-                                - const rating = parseInt(review.taste) || 0
-                                span.h5.text-warning.mb-0 #{'★'.repeat(rating)}#{'☆'.repeat(5 - rating)}
-                                br
-                                small.text-muted 맛 평점
+  h3.my-4.text-primary 작성된 글 목록
+  .row
+    for review in reviews
+      .col-12.mb-4
+        .card.shadow-sm.border-0.rounded
+          .card-body.p-4
+            .d-flex.justify-content-between.align-items-center.mb-2
+              div
+                h5.card-title.font-weight-bold.mb-0 #{review.store}
+                small.text-muted (#{review.name})
+              div.text-right
+                - const rating = parseInt(review.taste) || 0
+                span.h5.text-warning.mb-0 #{'★'.repeat(rating)}#{'☆'.repeat(5 - rating)}
+                br
+                small.text-muted 맛 평점
 
-                        h6.card-subtitle.mb-3.text-muted #{review.category} / #{review.menu}
+            h6.card-subtitle.mb-3.text-muted #{review.category} / #{review.menu}
 
-                        p.card-text.mb-1
-                            strong 분위기:
-                            | #{review.mood || '-'}
+            //- 🟢 "분위기" 대신 "태그" 목록 표시
+            p.card-text.mb-3
+              strong 태그:
+              if review.tags && review.tags.length > 0
+                each tag in review.tags
+                  //- 🟢 Bootstrap 'badge'를 사용해 태그를 예쁘게 표시
+                  span.badge.badge-info.mr-1.mb-1= tag
+              else
+                span.text-muted.ml-2 -
 
-                        p.card-text.mb-3
-                            strong 추천:
-                            |
-                            if review.recommend === 'yes'
-                                span.badge.badge-success.ml-2 추천해요 👍
-                            else
-                                span.badge.badge-secondary.ml-2 아쉬워요 👎
+            p.card-text.mb-3
+              strong 추천:
+              |
+              if review.recommend === 'yes'
+                span.badge.badge-success.ml-2 추천해요 👍
+              else
+                span.badge.badge-secondary.ml-2 아쉬워요 👎
 
-                        //- 메모와 날짜 부분
-                        .d-flex.justify-content-between.align-items-end.border-top.pt-3.mt-3
-                            small.text-muted.review-memo #{review.memo || '메모 없음'}
-                            small.text-muted.review-date #{new Date(review.createdAt).toLocaleDateString()}
-
-                        // ✅ ✏ 수정 / 삭제 버튼 묶음
-                        .text-right.mt-2
-                            a.btn.btn-sm.btn-outline-secondary(
-                                href=`/reviews/${review._id}/edit`,
-                                target='_blank',
-                                rel='noopener'
-                            ) ✏ 수정하기
-                            // 🟥 삭제 버튼 추가 (onclick으로 JS 함수 호출)
-                            button.btn.btn-sm.btn-danger.ml-2(
-                                type='button',
-                                onclick=`deleteReview('${review._id}')`
-                            ) 🗑 삭제
+            .d-flex.justify-content-between.align-items-end.border-top.pt-3.mt-3
+              small.text-muted.review-memo #{review.memo || '메모 없음'}
+              small.text-muted.review-date #{new Date(review.createdAt).toLocaleDateString()}
+            
+            .text-right.mt-2
+              a.btn.btn-sm.btn-outline-secondary(
+                href=`/reviews/${review._id}/edit`,
+                target='_blank',
+                rel='noopener'
+              ) ✏ 수정하기
+              button.btn.btn-sm.btn-danger.ml-2(
+                type='button',
+                onclick=`deleteReview('${review._id}')`
+              ) 🗑 삭제
 else
-    .alert.alert-info(role='alert')
-        | 아직 작성된 리뷰가 없습니다. 첫 번째 리뷰를 남겨주세요!
+  .alert.alert-info(role='alert')
+    | 아직 작성된 리뷰가 없습니다. 첫 번째 리뷰를 남겨주세요!

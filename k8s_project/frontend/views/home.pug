@@ -1,4 +1,4 @@
-// frontend/views/home.pug (최종 완성본 - 디자인 및 UX 개선)
+// frontend/views/home.pug (최종 완성본 - JS 안정성 강화)
 
 doctype html
 html
@@ -9,14 +9,12 @@ html
     link(rel='stylesheet', href='https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css')
     link(rel='stylesheet', href='/css/style.css')
   body
-    //- 🟢 1. 헤더에 ID 추가 (숨기기/보여주기 용)
-    .header.bg-light.mb-0#header-section
+    #header-section.header.bg-light.mb-0
       .container
         h1: a(href='/', class='text-dark text-decoration-none') 한입로그🍽
         p.text-muted.mb-0 작은 한입에도 이야기가 담겨요 🍲
 
-    //- 🟢 2. 새 리뷰 작성 폼 섹션 (기본적으로 숨겨짐)
-    .container.mb-5#form-section(style="display: none;")
+    #form-section.container.mb-5(style="display: none;")
       h3.mb-4.text-primary ✏️ 새 리뷰 작성
       form#new-review-form
         .form-group
@@ -48,8 +46,13 @@ html
             option(value='2') ★★☆☆☆
             option(value='1') ★☆☆☆☆
         .form-group
-          label(for='mood') 분위기
-          input#mood.form-control(type='text' name='mood' placeholder='조용함, 활기참, 가족적, 트렌디 등' required)
+          label 태그 (최소 1개 이상 선택)
+          .tag-selector.border.p-3.rounded
+            - const tags = [{emoji: '👥', label: '단체석'}, {emoji: '🪑', label: '입식'}, {emoji: '🧑‍🍳', label: '특별한메뉴'}, {emoji: '🛋️', label: '인테리어'}, {emoji: '🌿', label: '신선한'}, {emoji: '💕', label: '데이트'}, {emoji: '👀', label: '넓은'}, {emoji: '👥', label: '회식'}, {emoji: '🗣️', label: '대화'}, {emoji: '🍙', label: '혼밥'}, {emoji: '👨‍👩‍👧‍👦', label: '가족모임'}, {emoji: '✨', label: '분위기좋은'}, {emoji: '🆕', label: '새로오픈'}]
+            each tag in tags
+              .form-check.form-check-inline
+                input.form-check-input(type='checkbox', name='tags', id=`tag-${tag.label}`, value=tag.label)
+                label.form-check-label(for=`tag-${tag.label}`)= `${tag.emoji} ${tag.label}`
         .form-group
           label(for='memo') 추가 메모
           textarea#memo.form-control(name='memo' rows='4' placeholder='위생 상태, 위치, 걸리는 시간 등을 적어주세요')
@@ -62,74 +65,71 @@ html
         button.btn.btn-success.btn-block(type='submit') 작성 완료
         button.btn.btn-secondary.btn-block(type='button')#hide-form-btn 취소
 
-    //- 🟢 3. 메인 콘텐츠 (카테고리 필터 + 글 목록)
     #page-content
       .container.mb-5
-        //- 🟢 4. 디자인 수정 (버튼을 작게 만들고 오른쪽으로 이동)
         .d-flex.justify-content-between.align-items-center.mb-4
-          //- 카테고리 필터
           div
             - const categories = ['전체', '한식', '중식', '일식', '양식', '분식', '기타']
             each cat in categories
               a(href=`/?category=${cat}`, class=`btn ${currentCategory === cat ? 'btn-primary' : 'btn-outline-secondary'} mr-2 mb-2`)= cat
-          //- 새 리뷰 작성 버튼
           div
             button.btn.btn-primary.btn-sm#show-form-btn ✏️ 새 리뷰 작성
-
       .container-fluid.posts.mt-5
         include list.pug
+  
+  //- 🟢🟢🟢 여기가 수정된 스크립트입니다 🟢🟢🟢
+  script.
+    document.addEventListener('DOMContentLoaded', () => {
+      // 모든 섹션과 버튼을 안전하게 선택합니다.
+      const header = document.getElementById('header-section');
+      const pageContent = document.getElementById('page-content');
+      const formSection = document.getElementById('form-section');
+      const showButton = document.getElementById('show-form-btn');
+      const hideButton = document.getElementById('hide-form-btn');
 
-    //- 🟢 5. 자바스크립트 로직 대폭 수정
-    script.
-      document.addEventListener('DOMContentLoaded', () => {
-        // 모든 섹션과 버튼을 선택합니다.
-        const header = document.getElementById('header-section');
-        const pageContent = document.getElementById('page-content');
-        const formSection = document.getElementById('form-section');
-        const showButton = document.getElementById('show-form-btn');
-        const hideButton = document.getElementById('hide-form-btn');
+      // 🟢 'showButton'이 실제로 존재하는지 확인합니다.
+      if (!showButton) {
+        console.error('Error: "show-form-btn"을 찾을 수 없습니다!');
+        return; // 스크립트 실행 중단
+      }
+      // 🟢 'formSection' 등이 실제로 존재하는지 확인합니다.
+      if (!formSection || !hideButton || !header || !pageContent) {
+        console.error('Error: 페이지의 필수 구성요소(form, header 등)를 찾을 수 없습니다!');
+        return; // 스크립트 실행 중단
+      }
 
-        // 폼을 보여줄지 말지 결정하는 함수
-        function toggleSections(showForm) {
-          if (showForm) {
-            // 폼을 보여주고, 헤더와 메인 콘텐츠(목록)는 숨깁니다.
-            formSection.style.display = 'block';
-            header.style.display = 'none';
-            pageContent.style.display = 'none';
-          } else {
-            // 폼을 숨기고, 헤더와 메인 콘텐츠(목록)를 보여줍니다.
-            formSection.style.display = 'none';
-            header.style.display = 'block';
-            pageContent.style.display = 'block';
-          }
+      function toggleSections(showForm) {
+        if (showForm) {
+          formSection.style.display = 'block';
+          header.style.display = 'none';
+          pageContent.style.display = 'none';
+        } else {
+          formSection.style.display = 'none';
+          header.style.display = 'block';
+          pageContent.style.display = 'block';
         }
-
-        // URL을 기반으로 현재 상태를 결정하는 함수
-        function updateVisibility() {
-          if (window.location.pathname === '/reviews/new') {
-            toggleSections(true); // /reviews/new 주소면 폼을 보여줌
-          } else {
-            toggleSections(false); // 그 외 모든 주소(/)는 목록을 보여줌
-          }
+      }
+      function updateVisibility() {
+        if (window.location.pathname === '/reviews/new') {
+          toggleSections(true);
+        } else {
+          toggleSections(false);
         }
+      }
 
-        // "새 리뷰 작성" 버튼 클릭 시
-        showButton.addEventListener('click', () => {
-          history.pushState(null, '', '/reviews/new'); // URL을 /reviews/new로 변경
-          updateVisibility(); // 폼 보여주기
-        });
-
-        // "취소" 버튼 클릭 시
-        hideButton.addEventListener('click', () => {
-          history.pushState(null, '', '/'); // URL을 / 로 변경
-          updateVisibility(); // 폼 숨기기
-        });
-
-        // 브라우저 뒤로가기/앞으로가기 버튼 클릭 시
-        window.addEventListener('popstate', updateVisibility);
-        
-        // 페이지가 처음 로드될 때
+      // 🟢 "버튼이 존재할 때만" 이벤트를 연결합니다.
+      showButton.addEventListener('click', () => {
+        history.pushState(null, '', '/reviews/new');
         updateVisibility();
       });
 
-    script(src='/main.js')
+      // 🟢 "버튼이 존재할 때만" 이벤트를 연결합니다.
+      hideButton.addEventListener('click', () => {
+        history.pushState(null, '', '/');
+        updateVisibility();
+      });
+
+      window.addEventListener('popstate', updateVisibility);
+      updateVisibility();
+    });
+  script(src='/main.js')
