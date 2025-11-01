@@ -1,4 +1,4 @@
-// frontend/views/home.pug (최종 완성본 - 변수 충돌 해결)
+// frontend/views/home.pug (최종 완성본 - Pagination 추가)
 
 doctype html
 html
@@ -17,10 +17,11 @@ html
         h1: a(href='/', class='text-dark text-decoration-none') 한입로그🍽
         p.text-muted.mb-0 작은 한입에도 이야기가 담겨요 🍲
 
+    //- (폼 섹션은 이전과 동일)
     #form-section.container.mb-5(style="display: none;")
       h3.mb-4.text-primary ✏️ 새 리뷰 작성
       form#new-review-form
-        //- ... (다른 폼 필드들은 동일) ...
+        //- ... (폼 내용은 이전과 동일)
         .form-group
           label(for='name') 이름
           input#name.form-control(type='text' name='name' placeholder='익명도 가능해요' required)
@@ -49,11 +50,10 @@ html
             option(value='3') ★★★☆☆
             option(value='2') ★★☆☆☆
             option(value='1') ★☆☆☆☆
-            
         .form-group
           label 태그 (최소 1개 이상 선택)
           .tag-selector.border.p-3.rounded
-            //- 🟢 2. 'const tags' 대신 'allTags' 변수를 사용합니다.
+            //- 🟢 2. 'allTags' 변수를 사용합니다.
             each tag in allTags
               .form-check.form-check-inline
                 input.form-check-input(type='checkbox', name='tags', id=`tag-${tag.label}`, value=tag.label)
@@ -70,6 +70,7 @@ html
         button.btn.btn-success.btn-block(type='submit') 작성 완료
         button.btn.btn-secondary.btn-block(type='button')#hide-form-btn 취소
 
+
     #page-content
       .container.mb-5
         .d-flex.justify-content-between.align-items-start.mb-4
@@ -81,7 +82,7 @@ html
           
           div.ml-4(style="min-width: 200px;")
             h5.text-muted ✨ 분위기 태그
-            //- 🟢 3. 'const tags' 대신 'allTags' 변수를 사용합니다.
+            //- 🟢 3. 'allTags' 변수를 사용합니다.
             select#tag-filter.form-control.form-control-sm
               option(value='') -- 태그로 분류 --
               each tag in allTags
@@ -91,8 +92,26 @@ html
             button.btn.btn-primary.btn-sm#show-form-btn(style="white-space: nowrap;") ✏️ 새 리뷰 작성
 
       .container-fluid.posts.mt-5
+        //- 🟢 4. 리뷰 목록 포함
         include list.pug
-  
+
+        //- 🟢 5. 페이징 네비게이션 추가 (totalPages > 1 일 때만 보임)
+        if totalPages > 1
+          nav.d-flex.justify-content-center.mt-4
+            ul.pagination
+              //- '이전' 버튼
+              li.page-item(class=(currentPage == 1 ? 'disabled' : ''))
+                a.page-link(href=`/?page=${currentPage - 1}${baseQuery}`) Previous
+              
+              //- 페이지 번호 버튼
+              - for (let i = 1; i <= totalPages; i++)
+                li.page-item(class=(i == currentPage ? 'active' : ''))
+                  a.page-link(href=`/?page=${i}${baseQuery}`)= i
+              
+              //- '다음' 버튼
+              li.page-item(class=(currentPage == totalPages ? 'disabled' : ''))
+                a.page-link(href=`/?page=${currentPage + 1}${baseQuery}`) Next
+
   //- (페이지 하단 스크립트 부분은 이전과 동일)
   script.
     document.addEventListener('DOMContentLoaded', () => {
