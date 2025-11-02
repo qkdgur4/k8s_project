@@ -1,4 +1,4 @@
-// backend/main.go (최종 완성본 - 'any' 타입 문제 해결)
+// backend/main.go (최종 완성본 - ObjectID String 변환)
 
 package main
 
@@ -26,38 +26,56 @@ import (
 
 var jwtKey = []byte(os.Getenv("JWT_SECRET_KEY"))
 
-// ... (User, Review, PaginatedReviews 구조체는 이전과 동일) ...
+// 1. DB 저장을 위한 원본 구조체 (BSON)
 type User struct {
-	ID       primitive.ObjectID `bson:"_id,omitempty" json:"_id,omitempty"`
-	Username string             `bson:"username" json:"username"`
-	Password string             `bson:"password" json:"password"`
+	ID       primitive.ObjectID `bson:"_id,omitempty"`
+	Username string             `bson:"username"`
+	Password string             `bson:"password"`
 }
 type Review struct {
-	ID         primitive.ObjectID `bson:"_id,omitempty" json:"_id,omitempty"`
-	AuthorID   primitive.ObjectID `bson:"authorId" json:"authorId"`
-	AuthorName string             `bson:"authorName" json:"authorName"`
-	Name       string             `bson:"name" json:"name"`
-	Store      string             `bson:"store" json:"store"`
-	Category   string             `bson:"category" json:"category"`
-	Menu       string             `bson:"menu" json:"menu"`
-	Taste      string             `bson:"taste" json:"taste"`
-	Tags       []string           `bson:"tags" json:"tags"`
-	Memo       string             `bson:"memo" json:"memo"`
-	Recommend  string             `bson:"recommend" json:"recommend"`
-	CreatedAt  time.Time          `bson:"createdAt" json:"createdAt"`
-	UpdatedAt  time.Time          `bson:"updatedAt" json:"updatedAt"`
+	ID         primitive.ObjectID `bson:"_id,omitempty"`
+	AuthorID   primitive.ObjectID `bson:"authorId"`
+	AuthorName string             `bson:"authorName"`
+	Name       string             `bson:"name"`
+	Store      string             `bson:"store"`
+	Category   string             `bson:"category"`
+	Menu       string             `bson:"menu"`
+	Taste      string             `bson:"taste"`
+	Tags       []string           `bson:"tags"`
+	Memo       string             `bson:"memo"`
+	Recommend  string             `bson:"recommend"`
+	CreatedAt  time.Time          `bson:"createdAt"`
+	UpdatedAt  time.Time          `bson:"updatedAt"`
 }
-type PaginatedReviews struct {
-	Reviews     []Review `json:"reviews"`
-	CurrentPage int64    `json:"currentPage"`
-	TotalPages  int64    `json:"totalPages"`
+
+// 🟢 2. 프론트엔드(JSON)로 보낼 때 사용할 구조체 (ID를 string으로)
+type ReviewJSON struct {
+	ID         string    `json:"_id"`
+	AuthorID   string    `json:"authorId"`
+	AuthorName string    `json:"authorName"`
+	Name       string    `json:"name"`
+	Store      string    `json:"store"`
+	Category   string    `json:"category"`
+	Menu       string    `json:"menu"`
+	Taste      string    `json:"taste"`
+	Tags       []string  `json:"tags"`
+	Memo      string    `json:"memo"`
+	Recommend string    `json:"recommend"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }
+type PaginatedReviewsJSON struct {
+	Reviews     []ReviewJSON `json:"reviews"`
+	CurrentPage int64        `json:"currentPage"`
+	TotalPages  int64        `json:"totalPages"`
+}
+
 
 var userCollection *mongo.Collection
 var reviewCollection *mongo.Collection
 
 func main() {
-	// ... (main 함수 시작 부분은 이전과 동일) ...
+	// ... (main 함수 시작 부분, 라우팅 설정은 이전과 동일) ...
 	port := os.Getenv("PORT")
 	mongoURI := os.Getenv("GUESTBOOK_DB_ADDR")
 	if port == "" { port = "8000" }
@@ -104,7 +122,7 @@ func main() {
 	router.Run(":" + port)
 }
 
-// ... (registerUser, loginUser 핸들러는 이전과 동일) ...
+// ... (registerUser, loginUser, authMiddleware 핸들러는 이전과 동일) ...
 func hashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
 	return string(bytes), err
@@ -138,9 +156,6 @@ func loginUser(c *gin.Context) {
 	tokenString, err := token.SignedString(jwtKey); if err != nil { c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create token"}); return }
 	c.JSON(http.StatusOK, gin.H{ "token": tokenString, "userId": user.ID.Hex(), "username": user.Username, })
 }
-
-
-// ... (authMiddleware 핸들러는 이전과 동일) ...
 func authMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
@@ -176,23 +191,55 @@ func authMiddleware() gin.HandlerFunc {
 	}
 }
 
-// ... (getReviews, createReview, getReviewByID 핸들러는 이전과 동일) ...
+
+// --- 🟢 3. 수정된 핸들러 함수들 ---
+
 func getReviews(c *gin.Context) {
 	category := c.Query("category"); tag := c.Query("tag"); pageQuery := c.DefaultQuery("page", "1")
 	page, err := strconv.ParseInt(pageQuery, 10, 64); if err != nil || page < 1 { page = 1 }
 	limit := int64(10); skip := (page - 1) * limit
 	filter := bson.M{}
 	if category != "" && category != "전체" { filter["category"] = category } else if tag != "" { filter["tags"] = tag }
+	
 	totalCount, err := reviewCollection.CountDocuments(context.Background(), filter); if err != nil { c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to count documents"}); return }
 	opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}}).SetSkip(skip).SetLimit(limit)
 	cursor, err := reviewCollection.Find(context.Background(), filter, opts); if err != nil { c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch reviews"}); return }
 	defer cursor.Close(context.Background())
-	var reviews []Review
+	
+	var reviews []Review // DB에서 가져온 원본 데이터
 	if err = cursor.All(context.Background(), &reviews); err != nil { c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode reviews"}); return }
-	response := PaginatedReviews{ Reviews: reviews, CurrentPage: page, TotalPages: int64(math.Ceil(float64(totalCount) / float64(limit))), }
+	
+	// 🟢 4. DB에서 가져온 []Review를 프론트엔드용 []ReviewJSON으로 변환
+	reviewsJSON := make([]ReviewJSON, len(reviews))
+	for i, review := range reviews {
+		reviewsJSON[i] = ReviewJSON{
+			ID:         review.ID.Hex(),
+			AuthorID:   review.AuthorID.Hex(), // 🟢 바로 여기가 핵심 수정!
+			AuthorName: review.AuthorName,
+			Name:       review.Name,
+			Store:      review.Store,
+			Category:   review.Category,
+			Menu:       review.Menu,
+			Taste:      review.Taste,
+			Tags:       review.Tags,
+			Memo:       review.Memo,
+			Recommend:  review.Recommend,
+			CreatedAt:  review.CreatedAt,
+			UpdatedAt:  review.UpdatedAt,
+		}
+	}
+
+	response := PaginatedReviewsJSON{ // 🟢 JSON용 구조체로 응답
+		Reviews:     reviewsJSON,
+		CurrentPage: page,
+		TotalPages:  int64(math.Ceil(float64(totalCount) / float64(limit))),
+	}
+	
 	c.JSON(http.StatusOK, response)
 }
+
 func createReview(c *gin.Context) {
+	// (이전과 동일)
 	var review Review
 	if err := c.ShouldBindJSON(&review); err != nil { c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON body"}); return }
 	if review.Name == "" || review.Store == "" || review.Category == "" || review.Menu == "" || review.Taste == "" || review.Recommend == "" { c.JSON(http.StatusBadRequest, gin.H{"error": "모든 필수 필드를 입력해야 합니다."}); return }
@@ -204,36 +251,42 @@ func createReview(c *gin.Context) {
 	review.CreatedAt = time.Now(); review.UpdatedAt = time.Now()
 	result, err := reviewCollection.InsertOne(context.Background(), review); if err != nil { log.Println("Error saving review:", err); c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save review"}); return }
 	review.ID = result.InsertedID.(primitive.ObjectID)
-	c.JSON(http.StatusCreated, review)
+	
+	// 🟢 생성 응답도 JSON용으로 변환 (ID/AuthorID를 string으로)
+	c.JSON(http.StatusCreated, ReviewJSON{
+		ID: review.ID.Hex(), AuthorID: review.AuthorID.Hex(), AuthorName: review.AuthorName,
+		Name: review.Name, Store: review.Store, Category: review.Category, Menu: review.Menu,
+		Taste: review.Taste, Tags: review.Tags, Memo: review.Memo, Recommend: review.Recommend,
+		CreatedAt: review.CreatedAt, UpdatedAt: review.UpdatedAt,
+	})
 }
+
 func getReviewByID(c *gin.Context) {
 	id, err := primitive.ObjectIDFromHex(c.Param("id")); if err != nil { c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"}); return }
 	var review Review
 	err = reviewCollection.FindOne(context.Background(), bson.M{"_id": id}).Decode(&review); if err != nil { c.JSON(http.StatusNotFound, gin.H{"error": "Review not found"}); return }
-	c.JSON(http.StatusOK, review)
+	
+	// 🟢 1건 조회 응답도 JSON용으로 변환
+	c.JSON(http.StatusOK, ReviewJSON{
+		ID: review.ID.Hex(), AuthorID: review.AuthorID.Hex(), AuthorName: review.AuthorName,
+		Name: review.Name, Store: review.Store, Category: review.Category, Menu: review.Menu,
+		Taste: review.Taste, Tags: review.Tags, Memo: review.Memo, Recommend: review.Recommend,
+		CreatedAt: review.CreatedAt, UpdatedAt: review.UpdatedAt,
+	})
 }
 
-
-// --- 🟢🟢🟢 여기가 수정된 핸들러 함수들입니다! 🟢🟢🟢 ---
-
 func updateReview(c *gin.Context) {
+	// (이전과 동일)
 	id, err := primitive.ObjectIDFromHex(c.Param("id")); if err != nil { c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"}); return }
-	
-	// 1. "만능 상자"(`any`)에서 값을 꺼냅니다.
 	loggedInUserIDStr, _ := c.Get("userId")
-	
-	// 2. "이건 string이 맞습니다!"라고 보증(Type Assertion)합니다.
-	loggedInUserID, _ := primitive.ObjectIDFromHex(loggedInUserIDStr.(string)) // 🟢 . (string) 추가
-
+	loggedInUserID, _ := primitive.ObjectIDFromHex(loggedInUserIDStr.(string))
 	var originalReview Review
 	err = reviewCollection.FindOne(context.Background(), bson.M{"_id": id}).Decode(&originalReview); if err != nil { c.JSON(http.StatusNotFound, gin.H{"error": "Review not found"}); return }
 	if originalReview.AuthorID != loggedInUserID { c.JSON(http.StatusForbidden, gin.H{"error": "본인의 글만 수정할 수 있습니다."}); return }
-	
 	var reviewUpdate Review
 	if err := c.ShouldBindJSON(&reviewUpdate); err != nil { c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON body"}); return }
 	if reviewUpdate.Name == "" || reviewUpdate.Store == "" || reviewUpdate.Category == "" || reviewUpdate.Menu == "" || reviewUpdate.Taste == "" || reviewUpdate.Recommend == "" { c.JSON(http.StatusBadRequest, gin.H{"error": "모든 필수 필드를 입력해야 합니다."}); return }
 	if reviewUpdate.Tags == nil || len(reviewUpdate.Tags) == 0 { c.JSON(http.StatusBadRequest, gin.H{"error": "태그는 최소 1개 이상 선택해야 합니다."}); return }
-	
 	update := bson.M{
 		"$set": bson.M{
 			"name": reviewUpdate.Name, "store": reviewUpdate.Store, "category": reviewUpdate.Category,
@@ -246,18 +299,13 @@ func updateReview(c *gin.Context) {
 }
 
 func deleteReview(c *gin.Context) {
+	// (이전과 동일)
 	id, err := primitive.ObjectIDFromHex(c.Param("id")); if err != nil { c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"}); return }
-	
-	// 1. "만능 상자"(`any`)에서 값을 꺼냅니다.
 	loggedInUserIDStr, _ := c.Get("userId")
-	
-	// 2. "이건 string이 맞습니다!"라고 보증(Type Assertion)합니다.
-	loggedInUserID, _ := primitive.ObjectIDFromHex(loggedInUserIDStr.(string)) // 🟢 . (string) 추가
-
+	loggedInUserID, _ := primitive.ObjectIDFromHex(loggedInUserIDStr.(string))
 	var originalReview Review
 	err = reviewCollection.FindOne(context.Background(), bson.M{"_id": id}).Decode(&originalReview); if err != nil { c.JSON(http.StatusNotFound, gin.H{"error": "Review not found"}); return }
 	if originalReview.AuthorID != loggedInUserID { c.JSON(http.StatusForbidden, gin.H{"error": "본인의 글만 삭제할 수 있습니다."}); return }
-	
 	_, err = reviewCollection.DeleteOne(context.Background(), bson.M{"_id": id}); if err != nil { c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete review"}); return }
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }

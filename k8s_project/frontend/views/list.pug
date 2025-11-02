@@ -1,4 +1,4 @@
-// frontend/views/list.pug (최종 완성본 - Auth 추가)
+// frontend/views/list.pug (최종 완성본 - 'AuthorID' -> 'authorId' 수정)
 
 if reviews && reviews.length > 0
   h3.my-4.text-primary 작성된 글 목록
@@ -10,8 +10,8 @@ if reviews && reviews.length > 0
             .d-flex.justify-content-between.align-items-center.mb-2
               div
                 h5.card-title.font-weight-bold.mb-0 #{review.store}
-                //- 🟢 작성자 이름(AuthorName)을 DB에서 가져옴
-                small.text-muted (#{review.AuthorName || review.name})
+                //- 🟢 'review.AuthorName' -> 'review.authorName'
+                small.text-muted (#{review.authorName || review.name})
               div.text-right
                 - const rating = parseInt(review.taste) || 0
                 span.h5.text-warning.mb-0 #{'★'.repeat(rating)}#{'☆'.repeat(5 - rating)}
@@ -37,15 +37,14 @@ if reviews && reviews.length > 0
               small.text-muted.review-memo #{review.memo || '메모 없음'}
               small.text-muted.review-date #{new Date(review.createdAt).toLocaleDateString()}
             
-            //- 🟢 1. 버튼 래퍼에 'review-actions' 클래스 추가
-            //- 🟢 2. 'data-author-id' 속성에 작성자 ID 심기
-            .text-right.mt-2.review-actions(data-author-id=review.AuthorID)
+            //- 🟢🟢🟢 바로 여기가 수정된 부분입니다! 🟢🟢🟢
+            //- 'data-author-id=review.AuthorID' -> 'data-author-id=review.authorId'
+            .text-right.mt-2.review-actions(data-author-id=review.authorId)
               a.btn.btn-sm.btn-outline-info.mr-2(
                 href=`https://search.naver.com/search.naver?query=#{encodeURIComponent(review.store || '')}`,
                 target='_blank', rel='noopener'
               ) 🗺️ 자세히 보기
               
-              //- 🟢 3. 이 버튼들은 JS가 숨김/표시 처리 (기본 숨김)
               a.btn.btn-sm.btn-outline-secondary.edit-btn(
                 href=`/reviews/${review._id}/edit`,
                 target='_blank', rel='noopener', style="display: none;"

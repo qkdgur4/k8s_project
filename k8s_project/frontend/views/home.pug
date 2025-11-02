@@ -1,4 +1,4 @@
-// frontend/views/home.pug (최종 완성본 - Auth 추가)
+// frontend/views/home.pug (최종 방탄 코드)
 
 doctype html
 html
@@ -13,22 +13,18 @@ html
 
     #header-section.header.bg-light.mb-0
       .container
-        //- 🟢 1. 로그인/로그아웃 UI 추가
         .d-flex.justify-content-between.align-items-center
           div
             h1: a(href='/', class='text-dark text-decoration-none') 한입로그🍽
             p.text-muted.mb-0 작은 한입에도 이야기가 담겨요 🍲
           div
-            //- 비로그인 시
             #auth-links
               button.btn.btn-outline-primary.btn-sm.mr-2#login-btn 로그인
               button.btn.btn-outline-secondary.btn-sm#register-btn 회원가입
-            //- 로그인 시
             #user-info(style="display: none;")
               span#welcome-msg.text-muted.mr-3
               button.btn.btn-danger.btn-sm#logout-btn 로그아웃
 
-    //- 🟢 2. 로그인 폼 (숨겨짐)
     #login-form-section.container.mb-5(style="display: none;")
       h3.mb-4.text-primary 🔒 로그인
       form#login-form
@@ -41,7 +37,6 @@ html
         button.btn.btn-primary.btn-block(type='submit') 로그인
         button.btn.btn-secondary.btn-block(type='button')#cancel-login-btn 취소
 
-    //- 🟢 3. 회원가입 폼 (숨겨짐)
     #register-form-section.container.mb-5(style="display: none;")
       h3.mb-4.text-primary 👤 회원가입
       form#register-form
@@ -54,11 +49,9 @@ html
         button.btn.btn-success.btn-block(type='submit') 회원가입
         button.btn.btn-secondary.btn-block(type='button')#cancel-register-btn 취소
 
-    //- 🟢 4. 새 리뷰 폼 (숨겨짐)
     #form-section.container.mb-5(style="display: none;")
       h3.mb-4.text-primary ✏️ 새 리뷰 작성
       form#new-review-form
-        //- ... (폼 내용은 이전과 동일)
         .form-group
           label(for='name') 이름
           input#name.form-control(type='text' name='name' placeholder='익명도 가능해요' required)
@@ -106,7 +99,6 @@ html
         button.btn.btn-success.btn-block(type='submit') 작성 완료
         button.btn.btn-secondary.btn-block(type='button')#hide-form-btn 취소
 
-    //- 🟢 5. 메인 콘텐츠 (필터 + 목록)
     #page-content
       .container.mb-5
         .d-flex.justify-content-between.align-items-start.mb-4
@@ -137,10 +129,8 @@ html
               li.page-item(class=(currentPage == totalPages ? 'disabled' : ''))
                 a.page-link(href=`/?page=${currentPage + 1}${baseQuery}`) Next
 
-    //- 🟢 6. 자바스크립트 로직 (Auth)
     script.
       document.addEventListener('DOMContentLoaded', () => {
-        // 섹션/버튼 선택
         const header = document.getElementById('header-section');
         const pageContent = document.getElementById('page-content');
         const formSection = document.getElementById('form-section');
@@ -150,7 +140,6 @@ html
         const userInfo = document.getElementById('user-info');
         const welcomeMsg = document.getElementById('welcome-msg');
         
-        // 폼/버튼 이벤트 핸들러
         const showButton = document.getElementById('show-form-btn');
         const hideButton = document.getElementById('hide-form-btn');
         const loginButton = document.getElementById('login-btn');
@@ -160,50 +149,49 @@ html
         const cancelRegisterBtn = document.getElementById('cancel-register-btn');
         const tagFilter = document.getElementById('tag-filter');
 
-        // 모든 섹션을 숨기는 헬퍼 함수
         function hideAllSections() {
-          formSection.style.display = 'none';
-          loginSection.style.display = 'none';
-          registerSection.style.display = 'none';
-          header.style.display = 'block';
-          pageContent.style.display = 'block';
+          if (formSection) formSection.style.display = 'none';
+          if (loginSection) loginSection.style.display = 'none';
+          if (registerSection) registerSection.style.display = 'none';
+          if (header) header.style.display = 'block';
+          if (pageContent) pageContent.style.display = 'block';
         }
 
-        // 1. 로그인 상태 확인 (페이지 로드 시)
         function checkLoginState() {
           const token = localStorage.getItem('token');
           const username = localStorage.getItem('username');
           if (token && username) {
-            authLinks.style.display = 'none';
-            userInfo.style.display = 'block';
-            welcomeMsg.textContent = `👋 ${username}님, 환영합니다!`;
+            if (authLinks) authLinks.style.display = 'none';
+            if (userInfo) userInfo.style.display = 'block';
+            if (welcomeMsg) welcomeMsg.textContent = `👋 ${username}님, 환영합니다!`;
           } else {
-            authLinks.style.display = 'block';
-            userInfo.style.display = 'none';
-            welcomeMsg.textContent = '';
+            if (authLinks) authLinks.style.display = 'block';
+            if (userInfo) userInfo.style.display = 'none';
+            if (welcomeMsg) welcomeMsg.textContent = '';
           }
-          // URL 경로에 따라 폼 상태 업데이트
           updateVisibility();
         }
 
-        // 2. 폼/섹션 상태 업데이트
         function updateVisibility() {
           const path = window.location.pathname;
+          hideAllSections(); // 🟢 일단 모든 것을 기본 상태(목록)로 리셋
+          
           if (path === '/reviews/new') {
-            hideAllSections();
-            formSection.style.display = 'block';
+            if (formSection) formSection.style.display = 'block';
+            if (header) header.style.display = 'none';
+            if (pageContent) pageContent.style.display = 'none';
           } else if (path === '/login') {
-            hideAllSections();
-            loginSection.style.display = 'block';
+            if (loginSection) loginSection.style.display = 'block';
+            if (header) header.style.display = 'block'; // 🟢 헤더는 계속 보이게
+            if (pageContent) pageContent.style.display = 'none';
           } else if (path === '/register') {
-            hideAllSections();
-            registerSection.style.display = 'block';
-          } else {
-            hideAllSections(); // '/' (메인 페이지)
+            if (registerSection) registerSection.style.display = 'block';
+            if (header) header.style.display = 'block'; // 🟢 헤더는 계속 보이게
+            if (pageContent) pageContent.style.display = 'none';
           }
+          // else (경로가 '/')는 hideAllSections()가 이미 처리함
         }
 
-        // --- 이벤트 리스너 연결 ---
         if (showButton) {
           showButton.addEventListener('click', () => {
             if (!localStorage.getItem('token')) {
@@ -263,8 +251,7 @@ html
         }
         
         window.addEventListener('popstate', updateVisibility);
-        checkLoginState(); // 페이지 첫 로드 시 실행
+        checkLoginState();
       });
 
-    //- 7. main.js는 이 스크립트 블록 '아래'에 둡니다.
     script(src='/main.js')
