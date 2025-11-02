@@ -8,6 +8,8 @@ require (
         github.com/gin-contrib/cors v1.7.2
         github.com/gin-gonic/gin v1.10.0
         go.mongodb.org/mongo-driver v1.15.0
+        golang.org/x/crypto v0.24.0 // 🟢 1. 'bcrypt' 암호화 라이브러리
+	    github.com/golang-jwt/jwt/v5 v5.2.1 // 🟢 2. JWT(신분증) 라이브러리
 )
 
 require (

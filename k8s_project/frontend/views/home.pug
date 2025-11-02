@@ -1,4 +1,4 @@
-// frontend/views/home.pug (최종 완성본 - Pagination 추가)
+// frontend/views/home.pug (최종 완성본 - Auth 추가)
 
 doctype html
 html
@@ -9,15 +9,52 @@ html
     link(rel='stylesheet', href='https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css')
     link(rel='stylesheet', href='/css/style.css')
   body
-    //- 🟢 1. 태그 리스트를 파일 최상단에서 'allTags'라는 이름으로 딱 한 번만 정의합니다.
     - const allTags = [{emoji: '👥', label: '단체석'}, {emoji: '🪑', label: '입식'}, {emoji: '🧑‍🍳', label: '특별한메뉴'}, {emoji: '🛋️', label: '인테리어'}, {emoji: '🌿', label: '신선한'}, {emoji: '💕', label: '데이트'}, {emoji: '👀', label: '넓은'}, {emoji: '👥', label: '회식'}, {emoji: '🗣️', label: '대화'}, {emoji: '🍙', label: '혼밥'}, {emoji: '👨‍👩‍👧‍👦', label: '가족모임'}, {emoji: '✨', label: '분위기좋은'}, {emoji: '🆕', label: '새로오픈'}]
 
     #header-section.header.bg-light.mb-0
       .container
-        h1: a(href='/', class='text-dark text-decoration-none') 한입로그🍽
-        p.text-muted.mb-0 작은 한입에도 이야기가 담겨요 🍲
+        //- 🟢 1. 로그인/로그아웃 UI 추가
+        .d-flex.justify-content-between.align-items-center
+          div
+            h1: a(href='/', class='text-dark text-decoration-none') 한입로그🍽
+            p.text-muted.mb-0 작은 한입에도 이야기가 담겨요 🍲
+          div
+            //- 비로그인 시
+            #auth-links
+              button.btn.btn-outline-primary.btn-sm.mr-2#login-btn 로그인
+              button.btn.btn-outline-secondary.btn-sm#register-btn 회원가입
+            //- 로그인 시
+            #user-info(style="display: none;")
+              span#welcome-msg.text-muted.mr-3
+              button.btn.btn-danger.btn-sm#logout-btn 로그아웃
 
-    //- (폼 섹션은 이전과 동일)
+    //- 🟢 2. 로그인 폼 (숨겨짐)
+    #login-form-section.container.mb-5(style="display: none;")
+      h3.mb-4.text-primary 🔒 로그인
+      form#login-form
+        .form-group
+          label(for='login-username') 아이디
+          input#login-username.form-control(type='text' name='username' required)
+        .form-group
+          label(for='login-password') 비밀번호
+          input#login-password.form-control(type='password' name='password' required)
+        button.btn.btn-primary.btn-block(type='submit') 로그인
+        button.btn.btn-secondary.btn-block(type='button')#cancel-login-btn 취소
+
+    //- 🟢 3. 회원가입 폼 (숨겨짐)
+    #register-form-section.container.mb-5(style="display: none;")
+      h3.mb-4.text-primary 👤 회원가입
+      form#register-form
+        .form-group
+          label(for='register-username') 아이디
+          input#register-username.form-control(type='text' name='username' required)
+        .form-group
+          label(for='register-password') 비밀번호
+          input#register-password.form-control(type='password' name='password' required)
+        button.btn.btn-success.btn-block(type='submit') 회원가입
+        button.btn.btn-secondary.btn-block(type='button')#cancel-register-btn 취소
+
+    //- 🟢 4. 새 리뷰 폼 (숨겨짐)
     #form-section.container.mb-5(style="display: none;")
       h3.mb-4.text-primary ✏️ 새 리뷰 작성
       form#new-review-form
@@ -27,7 +64,7 @@ html
           input#name.form-control(type='text' name='name' placeholder='익명도 가능해요' required)
         .form-group
           label(for='store') 가게명
-          input#store.form-control(type='text' name='store' placeholder='방문한 음식점 이름을 상세하게 적어주세요(예:김밥천국 종로점)' required)
+          input#store.form-control(type='text' name='store' placeholder='방문한 음식점 이름을 적어주세요' required)
         .form-group
           label(for='category') 음식 분류
           select#category.form-control(name='category' required)
@@ -53,7 +90,6 @@ html
         .form-group
           label 태그 (최소 1개 이상 선택)
           .tag-selector.border.p-3.rounded
-            //- 🟢 2. 'allTags' 변수를 사용합니다.
             each tag in allTags
               .form-check.form-check-inline
                 input.form-check-input(type='checkbox', name='tags', id=`tag-${tag.label}`, value=tag.label)
@@ -70,7 +106,7 @@ html
         button.btn.btn-success.btn-block(type='submit') 작성 완료
         button.btn.btn-secondary.btn-block(type='button')#hide-form-btn 취소
 
-
+    //- 🟢 5. 메인 콘텐츠 (필터 + 목록)
     #page-content
       .container.mb-5
         .d-flex.justify-content-between.align-items-start.mb-4
@@ -79,89 +115,156 @@ html
             - const categories = ['전체', '한식', '중식', '일식', '양식', '분식', '기타']
             each cat in categories
               a(href=`/?category=${cat}`, class=`btn ${currentCategory === cat ? 'btn-primary' : 'btn-outline-secondary'} mr-2 mb-2`)= cat
-          
           div.ml-4(style="min-width: 200px;")
             h5.text-muted ✨ 분위기 태그
-            //- 🟢 3. 'allTags' 변수를 사용합니다.
             select#tag-filter.form-control.form-control-sm
               option(value='') -- 태그로 분류 --
               each tag in allTags
                 option(value=tag.label, selected=(currentTag === tag.label))= `${tag.emoji} ${tag.label}`
-
           div.ml-auto.pl-4
             button.btn.btn-primary.btn-sm#show-form-btn(style="white-space: nowrap;") ✏️ 새 리뷰 작성
 
       .container-fluid.posts.mt-5
-        //- 🟢 4. 리뷰 목록 포함
         include list.pug
-
-        //- 🟢 5. 페이징 네비게이션 추가 (totalPages > 1 일 때만 보임)
         if totalPages > 1
           nav.d-flex.justify-content-center.mt-4
             ul.pagination
-              //- '이전' 버튼
               li.page-item(class=(currentPage == 1 ? 'disabled' : ''))
                 a.page-link(href=`/?page=${currentPage - 1}${baseQuery}`) Previous
-              
-              //- 페이지 번호 버튼
               - for (let i = 1; i <= totalPages; i++)
                 li.page-item(class=(i == currentPage ? 'active' : ''))
                   a.page-link(href=`/?page=${i}${baseQuery}`)= i
-              
-              //- '다음' 버튼
               li.page-item(class=(currentPage == totalPages ? 'disabled' : ''))
                 a.page-link(href=`/?page=${currentPage + 1}${baseQuery}`) Next
 
-  //- (페이지 하단 스크립트 부분은 이전과 동일)
-  script.
-    document.addEventListener('DOMContentLoaded', () => {
-      const header = document.getElementById('header-section');
-      const pageContent = document.getElementById('page-content');
-      const formSection = document.getElementById('form-section');
-      const showButton = document.getElementById('show-form-btn');
-      const hideButton = document.getElementById('hide-form-btn');
-      
-      if (showButton && formSection && hideButton && header && pageContent) {
-        function toggleSections(showForm) {
-          if (showForm) {
-            formSection.style.display = 'block';
-            header.style.display = 'none';
-            pageContent.style.display = 'none';
-          } else {
-            formSection.style.display = 'none';
-            header.style.display = 'block';
-            pageContent.style.display = 'block';
-          }
-        }
-        function updateVisibility() {
-          if (window.location.pathname === '/reviews/new') {
-            toggleSections(true);
-          } else {
-            toggleSections(false);
-          }
-        }
-        showButton.addEventListener('click', () => {
-          history.pushState(null, '', '/reviews/new');
-          updateVisibility();
-        });
-        hideButton.addEventListener('click', () => {
-          history.pushState(null, '', '/');
-          updateVisibility();
-        });
-        window.addEventListener('popstate', updateVisibility);
-        updateVisibility();
-      }
+    //- 🟢 6. 자바스크립트 로직 (Auth)
+    script.
+      document.addEventListener('DOMContentLoaded', () => {
+        // 섹션/버튼 선택
+        const header = document.getElementById('header-section');
+        const pageContent = document.getElementById('page-content');
+        const formSection = document.getElementById('form-section');
+        const loginSection = document.getElementById('login-form-section');
+        const registerSection = document.getElementById('register-form-section');
+        const authLinks = document.getElementById('auth-links');
+        const userInfo = document.getElementById('user-info');
+        const welcomeMsg = document.getElementById('welcome-msg');
+        
+        // 폼/버튼 이벤트 핸들러
+        const showButton = document.getElementById('show-form-btn');
+        const hideButton = document.getElementById('hide-form-btn');
+        const loginButton = document.getElementById('login-btn');
+        const registerButton = document.getElementById('register-btn');
+        const logoutButton = document.getElementById('logout-btn');
+        const cancelLoginBtn = document.getElementById('cancel-login-btn');
+        const cancelRegisterBtn = document.getElementById('cancel-register-btn');
+        const tagFilter = document.getElementById('tag-filter');
 
-      const tagFilter = document.getElementById('tag-filter');
-      if (tagFilter) {
-        tagFilter.addEventListener('change', (e) => {
-          const selectedTag = e.target.value;
-          if (selectedTag) {
-            window.location.href = `/?tag=${selectedTag}`;
+        // 모든 섹션을 숨기는 헬퍼 함수
+        function hideAllSections() {
+          formSection.style.display = 'none';
+          loginSection.style.display = 'none';
+          registerSection.style.display = 'none';
+          header.style.display = 'block';
+          pageContent.style.display = 'block';
+        }
+
+        // 1. 로그인 상태 확인 (페이지 로드 시)
+        function checkLoginState() {
+          const token = localStorage.getItem('token');
+          const username = localStorage.getItem('username');
+          if (token && username) {
+            authLinks.style.display = 'none';
+            userInfo.style.display = 'block';
+            welcomeMsg.textContent = `👋 ${username}님, 환영합니다!`;
           } else {
-            window.location.href = '/';
+            authLinks.style.display = 'block';
+            userInfo.style.display = 'none';
+            welcomeMsg.textContent = '';
           }
-        });
-      }
-    });
-  script(src='/main.js')
+          // URL 경로에 따라 폼 상태 업데이트
+          updateVisibility();
+        }
+
+        // 2. 폼/섹션 상태 업데이트
+        function updateVisibility() {
+          const path = window.location.pathname;
+          if (path === '/reviews/new') {
+            hideAllSections();
+            formSection.style.display = 'block';
+          } else if (path === '/login') {
+            hideAllSections();
+            loginSection.style.display = 'block';
+          } else if (path === '/register') {
+            hideAllSections();
+            registerSection.style.display = 'block';
+          } else {
+            hideAllSections(); // '/' (메인 페이지)
+          }
+        }
+
+        // --- 이벤트 리스너 연결 ---
+        if (showButton) {
+          showButton.addEventListener('click', () => {
+            if (!localStorage.getItem('token')) {
+              alert('로그인이 필요합니다. 먼저 로그인해주세요.');
+              history.pushState(null, '', '/login');
+              updateVisibility();
+            } else {
+              history.pushState(null, '', '/reviews/new');
+              updateVisibility();
+            }
+          });
+        }
+        if (hideButton) {
+          hideButton.addEventListener('click', () => {
+            history.pushState(null, '', '/');
+            updateVisibility();
+          });
+        }
+        if (loginButton) {
+          loginButton.addEventListener('click', () => {
+            history.pushState(null, '', '/login');
+            updateVisibility();
+          });
+        }
+        if (registerButton) {
+          registerButton.addEventListener('click', () => {
+            history.pushState(null, '', '/register');
+            updateVisibility();
+          });
+        }
+        if (logoutButton) {
+          logoutButton.addEventListener('click', () => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('userId');
+            localStorage.removeItem('username');
+            alert('로그아웃되었습니다.');
+            window.location.href = '/';
+          });
+        }
+        if (cancelLoginBtn) {
+          cancelLoginBtn.addEventListener('click', () => {
+            history.pushState(null, '', '/');
+            updateVisibility();
+          });
+        }
+        if (cancelRegisterBtn) {
+          cancelRegisterBtn.addEventListener('click', () => {
+            history.pushState(null, '', '/');
+            updateVisibility();
+          });
+        }
+        if (tagFilter) {
+          tagFilter.addEventListener('change', (e) => {
+            const selectedTag = e.target.value;
+            window.location.href = selectedTag ? `/?tag=${selectedTag}` : '/';
+          });
+        }
+        
+        window.addEventListener('popstate', updateVisibility);
+        checkLoginState(); // 페이지 첫 로드 시 실행
+      });
+
+    //- 7. main.js는 이 스크립트 블록 '아래'에 둡니다.
+    script(src='/main.js')

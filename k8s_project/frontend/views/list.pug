@@ -1,4 +1,4 @@
-// frontend/views/list.pug (최종 완성본 - URL 인코딩 추가)
+// frontend/views/list.pug (최종 완성본 - Auth 추가)
 
 if reviews && reviews.length > 0
   h3.my-4.text-primary 작성된 글 목록
@@ -10,7 +10,8 @@ if reviews && reviews.length > 0
             .d-flex.justify-content-between.align-items-center.mb-2
               div
                 h5.card-title.font-weight-bold.mb-0 #{review.store}
-                small.text-muted (#{review.name})
+                //- 🟢 작성자 이름(AuthorName)을 DB에서 가져옴
+                small.text-muted (#{review.AuthorName || review.name})
               div.text-right
                 - const rating = parseInt(review.taste) || 0
                 span.h5.text-warning.mb-0 #{'★'.repeat(rating)}#{'☆'.repeat(5 - rating)}
@@ -18,7 +19,6 @@ if reviews && reviews.length > 0
                 small.text-muted 맛 평점
 
             h6.card-subtitle.mb-3.text-muted #{review.category} / #{review.menu}
-
             p.card-text.mb-3
               strong 태그:
               if Array.isArray(review.tags) && review.tags.length > 0
@@ -26,7 +26,6 @@ if reviews && reviews.length > 0
                   a.badge.badge-info.mr-1.mb-1(href=`/?tag=${tag}`)= tag
               else
                 span.text-muted.ml-2 -
-
             p.card-text.mb-3
               strong 추천:
               if review.recommend === 'yes'
@@ -38,25 +37,22 @@ if reviews && reviews.length > 0
               small.text-muted.review-memo #{review.memo || '메모 없음'}
               small.text-muted.review-date #{new Date(review.createdAt).toLocaleDateString()}
             
-            .text-right.mt-2
-              //- 🟢🟢🟢 바로 여기가 수정된 부분입니다! 🟢🟢🟢
-              //- 1. encodeURIComponent() 함수로 review.store를 감쌌습니다.
-              //-    (review.store가 비어있을 경우를 대비해 || '' 안전장치 추가)
+            //- 🟢 1. 버튼 래퍼에 'review-actions' 클래스 추가
+            //- 🟢 2. 'data-author-id' 속성에 작성자 ID 심기
+            .text-right.mt-2.review-actions(data-author-id=review.AuthorID)
               a.btn.btn-sm.btn-outline-info.mr-2(
-                href=`https://search.naver.com/search.naver?query=${encodeURIComponent(review.store || '')}`,
-                target='_blank',
-                rel='noopener'
+                href=`https://search.naver.com/search.naver?query=#{encodeURIComponent(review.store || '')}`,
+                target='_blank', rel='noopener'
               ) 🗺️ 자세히 보기
               
-              //- 2. 기존 수정/삭제 버튼
-              a.btn.btn-sm.btn-outline-secondary(
+              //- 🟢 3. 이 버튼들은 JS가 숨김/표시 처리 (기본 숨김)
+              a.btn.btn-sm.btn-outline-secondary.edit-btn(
                 href=`/reviews/${review._id}/edit`,
-                target='_blank',
-                rel='noopener'
+                target='_blank', rel='noopener', style="display: none;"
               ) ✏ 수정하기
-              button.btn.btn-sm.btn-danger.ml-2(
+              button.btn.btn-sm.btn-danger.ml-2.delete-btn(
                 type='button',
-                onclick=`deleteReview('${review._id}')`
+                onclick=`deleteReview('${review._id}')`, style="display: none;"
               ) 🗑 삭제
 else
   .alert.alert-info(role='alert')
