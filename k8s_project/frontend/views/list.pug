@@ -1,4 +1,4 @@
-// frontend/views/list.pug (최종 완성본 - 'AuthorID' -> 'authorId' 수정)
+// frontend/views/list.pug (최종 완성본 - Naver '검색'으로 복귀)
 
 if reviews && reviews.length > 0
   h3.my-4.text-primary 작성된 글 목록
@@ -10,7 +10,6 @@ if reviews && reviews.length > 0
             .d-flex.justify-content-between.align-items-center.mb-2
               div
                 h5.card-title.font-weight-bold.mb-0 #{review.store}
-                //- 🟢 'review.AuthorName' -> 'review.authorName'
                 small.text-muted (#{review.authorName || review.name})
               div.text-right
                 - const rating = parseInt(review.taste) || 0
@@ -19,6 +18,7 @@ if reviews && reviews.length > 0
                 small.text-muted 맛 평점
 
             h6.card-subtitle.mb-3.text-muted #{review.category} / #{review.menu}
+
             p.card-text.mb-3
               strong 태그:
               if Array.isArray(review.tags) && review.tags.length > 0
@@ -26,6 +26,7 @@ if reviews && reviews.length > 0
                   a.badge.badge-info.mr-1.mb-1(href=`/?tag=${tag}`)= tag
               else
                 span.text-muted.ml-2 -
+
             p.card-text.mb-3
               strong 추천:
               if review.recommend === 'yes'
@@ -37,18 +38,23 @@ if reviews && reviews.length > 0
               small.text-muted.review-memo #{review.memo || '메모 없음'}
               small.text-muted.review-date #{new Date(review.createdAt).toLocaleDateString()}
             
-            //- 🟢🟢🟢 바로 여기가 수정된 부분입니다! 🟢🟢🟢
-            //- 'data-author-id=review.AuthorID' -> 'data-author-id=review.authorId'
             .text-right.mt-2.review-actions(data-author-id=review.authorId)
-              a.btn.btn-sm.btn-outline-info.mr-2(
-                href=`https://search.naver.com/search.naver?query=#{encodeURIComponent(review.store || '')}`,
-                target='_blank', rel='noopener'
-              ) 🗺️ 자세히 보기
+              
+              //- 🟢🟢🟢 바로 여기가 수정된 부분입니다! 🟢🟢🟢
+              //- 1. 'map.naver.com'을 'search.naver.com'으로 변경했습니다.
+              //- 2. 버튼 텍스트를 '지도 보기'에서 'Naver 검색'으로 변경했습니다.
+              a.btn.btn-sm.btn-outline-success.mr-2(
+                href=`https://search.naver.com/search.naver?query=${encodeURIComponent(review.store || '')}`,
+                target='_blank', 
+                rel='noopener'
+              ) 🔎 Naver 검색
               
               a.btn.btn-sm.btn-outline-secondary.edit-btn(
                 href=`/reviews/${review._id}/edit`,
-                target='_blank', rel='noopener', style="display: none;"
+                target='_blank', 
+                style="display: none;"
               ) ✏ 수정하기
+              
               button.btn.btn-sm.btn-danger.ml-2.delete-btn(
                 type='button',
                 onclick=`deleteReview('${review._id}')`, style="display: none;"
