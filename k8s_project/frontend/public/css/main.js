@@ -1,4 +1,4 @@
-// frontend/public/main.js (최종 완성본 - 토큰 전달)
+// frontend/public/main.js (최종 완성본 - '+' 오타 수정)
 
 document.addEventListener('DOMContentLoaded', () => {
     // 폼/버튼 선택
@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 1. 로그인 상태에 따라 수정/삭제 버튼 제어 ---
     const loggedInUserId = localStorage.getItem('userId');
-    const token = localStorage.getItem('token'); // 🟢 토큰 가져오기
+    const token = localStorage.getItem('token');
 
     if (loggedInUserId) {
         document.querySelectorAll('.review-actions').forEach(actions => {
@@ -16,10 +16,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (authorId === loggedInUserId) {
                 const editBtn = actions.querySelector('.edit-btn');
                 const deleteBtn = actions.querySelector('.delete-btn');
-                
+
                 if (editBtn) {
                     editBtn.style.display = 'inline-block';
-                    // 🟢 2. '수정' 버튼의 링크(href)에 토큰을 쿼리 파라미터로 추가합니다.
                     editBtn.href = `${editBtn.href}?token=${token}`;
                 }
                 if (deleteBtn) {
@@ -41,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             headers['Authorization'] = `Bearer ${currentToken}`;
         }
-        
+
         const response = await fetch(endpoint, {
             method: method,
             headers: headers,
@@ -55,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('세션이 만료되었거나 권한이 없습니다. 다시 로그인해주세요.');
             window.location.href = '/login';
         }
-        
+
         return response;
     }
 
@@ -66,14 +65,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const formData = new FormData(registerForm);
             const data = Object.fromEntries(formData.entries());
 
-            // 🟢 'POST /register'로 요청 (app.js의 프록시 규칙과 일치)
             const response = await apiRequest('/register', 'POST', data);
 
             if (response.ok) {
-                alert('회원가입 성공! 이제 로그인해주세요.');
-                // 🟢 4. 회원가입 후, 페이지 새로고침 대신 /login URL로 이동
-                history.pushState(null, '', '/login');
-                window.location.reload(); // 'GET /login'을 유발 -> app.js가 처리
+                alert('회원가입 성공! 이제 메인 페이지에서 로그인해주세요.');
+                window.location.href = '/';
             } else {
                 const errorData = await response.json();
                 alert('회원가입 실패: ' + (errorData.error || '서버 오류'));
@@ -88,7 +84,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const formData = new FormData(loginForm);
             const data = Object.fromEntries(formData.entries());
 
-            // 🟢 'POST /login'으로 요청 (app.js의 프록시 규칙과 일치)
             const response = await apiRequest('/login', 'POST', data);
 
             if (response.ok) {
@@ -113,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const tags = formData.getAll('tags');
             const data = Object.fromEntries(formData.entries());
             data.tags = tags;
-            
+
             if (tags.length === 0) {
               alert('태그를 1개 이상 선택해주세요!');
               return;
@@ -126,7 +121,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.location.href = '/';
             } else {
                 const errorData = await response.json();
-                alert('리뷰 등록 실패: ' (errorData.error || '서버 응답 오류'));
+                // 🟢🟢🟢 바로 여기가 수정된 부분입니다! 🟢🟢🟢
+                alert('리뷰 등록 실패: ' + (errorData.error || '서버 응답 오류'));
             }
         });
     }
@@ -142,7 +138,7 @@ async function deleteReview(id) {
         window.location.href = '/login';
         return;
     }
-    
+
     try {
         const response = await fetch(`/api/reviews/${id}`, {
             method: 'DELETE',
